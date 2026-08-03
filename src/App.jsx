@@ -420,8 +420,8 @@ export function CalculatorPage() {
       </motion.header>
 
       {/* Main Layout - Centered Form */}
-      <div className="container mx-auto grid grid-cols-2 gap-4">
-        <div className='flex flex-col gap-4'>
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className='flex flex-col gap-6'>
           <EstateForm
             deceasedName={deceasedName}
             setDeceasedName={setDeceasedName}
@@ -454,21 +454,18 @@ export function CalculatorPage() {
         />
 
         {errorMessage && (
-          <div className="p-4 bg-danger/10 border border-danger/30 text-danger rounded-2xl text-sm font-semibold text-center">
+          <div className="lg:col-span-2 p-4 bg-danger/10 border border-danger/30 text-danger rounded-2xl text-sm font-semibold text-center">
             ⚠️ {errorMessage}
           </div>
         )}
-
-
-
       </div>
 
-      <div className="flex gap-3 pt-1 mt-8">
+      <div className="flex flex-col sm:flex-row gap-3 pt-1 mt-8 max-w-2xl mx-auto">
         <Button
           size="lg"
           onPress={handleCalculate}
           isDisabled={!!errorMessage}
-          className="flex-2 bg-amber-600 hover:bg-amber-700 text-white font-bold"
+          className="flex-2 bg-amber-600 hover:bg-amber-700 text-white font-bold h-12"
         >
           <Calculator size={16} /> احسب التركة
         </Button>
@@ -477,7 +474,7 @@ export function CalculatorPage() {
           size="lg"
           variant="outline"
           onPress={resetAll}
-          className="flex-1 font-semibold"
+          className="flex-1 font-semibold h-12"
         >
           <RotateCcw size={14} /> إعادة تعيين
         </Button>
