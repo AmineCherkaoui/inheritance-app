@@ -8,7 +8,7 @@ import {
   ScrollText, AlertTriangle, User, Banknote, ArrowRight, PieChart as PieIcon, BarChart3, Share2, Download
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { deserializeState } from '../App';
+import { deserializeState } from '../utils';
 import { InheritanceCalculator } from '../engine';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from './PdfReport';

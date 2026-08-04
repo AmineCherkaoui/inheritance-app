@@ -9,27 +9,8 @@ import ResultsPage from './components/ResultsPage';
 import { Button } from '@heroui/react';
 import { motion } from 'motion/react';
 import { Scale, RotateCcw, Calculator, Share2 } from 'lucide-react';
+import { serializeState, deserializeState } from './utils';
 import './App.css';
-
-export const serializeState = (state) => {
-  try {
-    const json = JSON.stringify(state);
-    return btoa(unescape(encodeURIComponent(json)));
-  } catch (e) {
-    console.error("Failed to serialize state:", e);
-    return "";
-  }
-};
-
-export const deserializeState = (str) => {
-  try {
-    const json = decodeURIComponent(escape(atob(str)));
-    return JSON.parse(json);
-  } catch (e) {
-    console.error("Failed to deserialize state:", e);
-    return null;
-  }
-};
 
 
 const HEIR_CATEGORIES = {
@@ -211,16 +192,17 @@ const isCategoryBlocked = (catKey, currentHeirs) => {
 
 export function CalculatorPage() {
   const navigate = useNavigate();
-  const [deceasedName, setDeceasedName] = useState('المتوفى');
+  const [deceasedName, setDeceasedName] = useState('');
   const [deceasedGender, setDeceasedGender] = useState('male');
-  const [totalEstate, setTotalEstate] = useState(100000);
-  const [debts, setDebts] = useState(0);
+  const [totalEstate, setTotalEstate] = useState();
+  const [debts, setDebts] = useState();
   const [heirs, setHeirs] = useState({});
   const [wills, setWills] = useState([]);
   const [heirsApprovedExcess, setHeirsApprovedExcess] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -233,10 +215,16 @@ export function CalculatorPage() {
         if (state.totalEstate !== undefined) setTotalEstate(state.totalEstate);
         if (state.debts !== undefined) setDebts(state.debts);
         if (state.heirs !== undefined) setHeirs(state.heirs);
-        if (state.wills !== undefined) setWills(state.wills);
+        if (state.wills !== undefined) {
+          setWills(state.wills.map((w, idx) => ({
+            id: w.id || `will-${Date.now()}-${idx}-${Math.random()}`,
+            name: w.name || '',
+            value: w.value || '',
+            valueType: w.valueType || 'fraction'
+          })));
+        }
         if (state.heirsApprovedExcess !== undefined) setHeirsApprovedExcess(state.heirsApprovedExcess);
 
-        // Run calculation automatically to show preview on load
         const heirsList = Object.entries(state.heirs || {}).map(([relationship, count]) => ({
           relationship,
           count
@@ -305,14 +293,29 @@ export function CalculatorPage() {
       } else {
         updated[key] = val;
       }
+      const activeCount = Object.values(updated).filter(c => c > 0).length;
+      if (activeCount > 0) {
+        setErrorMessage('');
+      }
       return updated;
     });
+  };
+
+  const handleTotalEstateChange = (val) => {
+    setTotalEstate(val);
+    if (val && parseFloat(val) > 0) {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy.totalEstate;
+        return copy;
+      });
+    }
   };
 
   const addWill = () => {
     setWills(prev => [
       ...prev,
-      { id: Date.now(), name: '', value: '1/3', valueType: 'fraction' }
+      { id: `will-${Date.now()}-${Math.random()}`, name: '', value: '', valueType: 'fraction' }
     ]);
   };
 
@@ -321,16 +324,28 @@ export function CalculatorPage() {
       if (w.id === id) {
         const updated = { ...w, [key]: val };
         if (key === 'valueType') {
-          updated.value = val === 'fraction' ? '1/3' : 0;
+          updated.value = '';
         }
         return updated;
       }
       return w;
     }));
+    if (key === 'value' && val) {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
   };
 
   const removeWill = (id) => {
     setWills(prev => prev.filter(w => w.id !== id));
+    setErrors(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
   };
 
   const checkWillsExceedThird = () => {
@@ -356,6 +371,23 @@ export function CalculatorPage() {
   };
 
   const handleCalculate = () => {
+    const newErrors = {};
+
+    if (!totalEstate || parseFloat(totalEstate) <= 0) {
+      newErrors.totalEstate = 'يرجى إدخال قيمة التركة الإجمالية أكبر من الصفر.';
+    }
+
+    wills.forEach(will => {
+      if (!will.value) {
+        newErrors[will.id] = 'يرجى اختيار الكسر للوصية.';
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     const heirsList = Object.entries(heirs).map(([relationship, count]) => ({
       relationship,
       count
@@ -366,6 +398,7 @@ export function CalculatorPage() {
       return;
     }
 
+    setErrors({});
     setErrorMessage('');
 
     const caseData = {
@@ -379,10 +412,8 @@ export function CalculatorPage() {
       heirsApprovedExcess: heirsApprovedExcess
     };
 
-    console.log("Calculations input caseData:", caseData);
     const calculator = new InheritanceCalculator(caseData);
     const output = calculator.calculate();
-    console.log("Calculations output:", output);
     setResult(output);
     navigate('/results', { state: { result: output } });
   };
@@ -393,10 +424,11 @@ export function CalculatorPage() {
     setHeirsApprovedExcess(false);
     setResult(null);
     setDeceasedGender('male');
-    setDeceasedName('المتوفى');
-    setTotalEstate(100000);
-    setDebts(0);
+    setDeceasedName('');
+    setTotalEstate();
+    setDebts();
     setErrorMessage('');
+    setErrors({});
   };
 
   return (
@@ -421,6 +453,11 @@ export function CalculatorPage() {
 
       {/* Main Layout - Centered Form */}
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {errorMessage && (
+          <div className="lg:col-span-2 p-4 bg-danger/10 border border-danger/30 text-danger rounded-2xl text-sm font-semibold text-center">
+            ⚠️ {errorMessage}
+          </div>
+        )}
         <div className='flex flex-col gap-6'>
           <EstateForm
             deceasedName={deceasedName}
@@ -428,9 +465,10 @@ export function CalculatorPage() {
             deceasedGender={deceasedGender}
             handleGenderChange={handleGenderChange}
             totalEstate={totalEstate}
-            setTotalEstate={setTotalEstate}
+            setTotalEstate={handleTotalEstateChange}
             debts={debts}
             setDebts={setDebts}
+            errors={errors}
           />
 
           <WillsForm
@@ -441,6 +479,7 @@ export function CalculatorPage() {
             heirsApprovedExcess={heirsApprovedExcess}
             setHeirsApprovedExcess={setHeirsApprovedExcess}
             checkWillsExceedThird={checkWillsExceedThird}
+            errors={errors}
           />
         </div>
 
@@ -452,29 +491,20 @@ export function CalculatorPage() {
           isHeirBlocked={isHeirBlocked}
           deceasedGender={deceasedGender}
         />
-
-        {errorMessage && (
-          <div className="lg:col-span-2 p-4 bg-danger/10 border border-danger/30 text-danger rounded-2xl text-sm font-semibold text-center">
-            ⚠️ {errorMessage}
-          </div>
-        )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-1 mt-8 max-w-2xl mx-auto">
+      <div className="flex flex-col sm:flex-row gap-3 mt-8  ">
         <Button
-          size="lg"
           onPress={handleCalculate}
-          isDisabled={!!errorMessage}
-          className="flex-2 bg-amber-600 hover:bg-amber-700 text-white font-bold h-12"
+          className="flex-2 bg-amber-600 hover:bg-amber-700 text-white font-bold  w-full py-2"
         >
           <Calculator size={16} /> احسب التركة
         </Button>
 
         <Button
-          size="lg"
           variant="outline"
           onPress={resetAll}
-          className="flex-1 font-semibold h-12"
+          className="flex-1 font-semibold w-full py-2"
         >
           <RotateCcw size={14} /> إعادة تعيين
         </Button>

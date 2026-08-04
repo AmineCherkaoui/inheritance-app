@@ -94,9 +94,8 @@ export default function HeirSelector({
                           >
                             <Card
                               variant={isActive ? 'secondary' : 'default'}
-                              className={`flex flex-row items-center justify-between rounded-xl transition-all duration-200 cursor-pointer select-none p-3.5 shadow-none border ${
-                                isActive ? 'border-amber-300 ring-1 ring-amber-300 bg-amber-50/15' : 'border-default-200 hover:border-amber-300'
-                              }`}
+                              className={`flex flex-row items-center justify-between rounded-xl transition-all duration-200 cursor-pointer select-none p-3.5 shadow-none border ${isActive ? 'border-amber-300 ring-1 ring-amber-300 bg-amber-50/15' : 'border-default-200 hover:border-amber-300'
+                                }`}
                               onClick={handleCardClick}
                             >
                               <span className={`text-xs font-bold ${isActive ? 'text-amber-900' : 'text-foreground'}`}>

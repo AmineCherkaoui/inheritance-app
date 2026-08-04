@@ -10,7 +10,8 @@ export default function WillsForm({
   removeWill,
   heirsApprovedExcess,
   setHeirsApprovedExcess,
-  checkWillsExceedThird
+  checkWillsExceedThird,
+  errors = {}
 }) {
   return (
     <motion.div
@@ -51,40 +52,54 @@ export default function WillsForm({
                       className="flex-2"
                     />
 
-                    <Select
-                      className="flex-1"
-                      aria-label="اختر الكسر الشرعي"
-                      placeholder="اختر الكسر"
-                      selectedKeys={[will.value]}
-                      onSelectionChange={(keys) => {
-                        const val = typeof keys === 'string' ? keys : Array.from(keys)[0];
-                        console.log('Select keys type:', typeof keys, 'raw:', keys, 'val:', val);
-                        if (val) updateWill(will.id, 'value', val);
-                      }}
-                    >
-                      <Select.Trigger>
-                        <Select.Value />
-                        <Select.Indicator />
-                      </Select.Trigger>
-                      <Select.Popover>
-                        <ListBox>
-                          <ListBox.Item id="1/2" textValue="1/2 (النصف)">1/2 (النصف)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/3" textValue="1/3 (الثلث)">1/3 (الثلث)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/4" textValue="1/4 (الربع)">1/4 (الربع)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/5" textValue="1/5 (الخمس)">1/5 (الخمس)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/6" textValue="1/6 (السدس)">1/6 (السدس)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/7" textValue="1/7 (السبع)">1/7 (السبع)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/8" textValue="1/8 (الثمن)">1/8 (الثمن)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/9" textValue="1/9 (التسع)">1/9 (التسع)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/10" textValue="1/10 (العشر)">1/10 (العشر)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/12" textValue="1/12 (جزء من 12)">1/12 (جزء من 12)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/16" textValue="1/16 (جزء من 16)">1/16 (جزء من 16)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="1/24" textValue="1/24 (جزء من 24)">1/24 (جزء من 24)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="2/3" textValue="2/3 (الثلثين)">2/3 (الثلثين)<ListBox.ItemIndicator /></ListBox.Item>
-                          <ListBox.Item id="3/4" textValue="3/4 (ثلاثة أرباع)">3/4 (ثلاثة أرباع)<ListBox.ItemIndicator /></ListBox.Item>
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
+                    <div className="flex-1 flex flex-col gap-1">
+                      <Select
+                        className="w-full"
+                        aria-label="اختر الكسر"
+                        placeholder="اختر الكسر"
+                        value={will.value}
+                        onChange={(val) => {
+                          if (val) updateWill(will.id, 'value', val);
+                        }}
+                        isInvalid={!!errors[will.id]}
+                      >
+                        <Select.Trigger>
+                          <Select.Value />
+                          <Select.Indicator />
+                        </Select.Trigger>
+                        <Select.Popover>
+                          <ListBox>
+                            <ListBox.Item id="1/2" textValue="1/2 (النصف)">1/2 (النصف)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/3" textValue="1/3 (الثلث)">1/3 (الثلث)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/4" textValue="1/4 (الربع)">1/4 (الربع)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/5" textValue="1/5 (الخمس)">1/5 (الخمس)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/6" textValue="1/6 (السدس)">1/6 (السدس)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/7" textValue="1/7 (السبع)">1/7 (السبع)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/8" textValue="1/8 (الثمن)">1/8 (الثمن)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/9" textValue="1/9 (التسع)">1/9 (التسع)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/10" textValue="1/10 (العشر)">1/10 (العشر)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/12" textValue="1/12 (جزء من 12)">1/12 (جزء من 12)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/16" textValue="1/16 (جزء من 16)">1/16 (جزء من 16)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="1/24" textValue="1/24 (جزء من 24)">1/24 (جزء من 24)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="2/3" textValue="2/3 (الثلثين)">2/3 (الثلثين)<ListBox.ItemIndicator /></ListBox.Item>
+                            <ListBox.Item id="3/4" textValue="3/4 (ثلاثة أرباع)">3/4 (ثلاثة أرباع)<ListBox.ItemIndicator /></ListBox.Item>
+                          </ListBox>
+                        </Select.Popover>
+                      </Select>
+                      <AnimatePresence>
+                        {errors[will.id] && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, y: -5 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -5 }}
+                            transition={{ duration: 0.2 }}
+                            className="text-xs font-bold text-danger flex items-center gap-1 mt-1 px-1"
+                          >
+                            ⚠️ {errors[will.id]}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
                     <Button
                       variant="danger-soft"
