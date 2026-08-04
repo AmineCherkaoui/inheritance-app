@@ -279,6 +279,7 @@ export class InheritanceCalculator {
         let remaining = new Fraction(1);
         remaining = this._calculate_fixed_shares(remaining);
         this._distribute_residue(remaining);
+        this._apply_radd();
 
         return this._prepare_results();
     }
@@ -619,6 +620,46 @@ export class InheritanceCalculator {
                 this.results[rel] = { share: remaining, count: this.heirs[rel].count };
                 this.explanations[rel] = `يرث ${this.heirs[rel].displayName} الباقي تعصيباً كونه أقرب عاصب ذكر متبقي للمتوفى.`;
                 return;
+            }
+        }
+    }
+
+    _apply_radd() {
+        let sumShares = new Fraction(0);
+        for (const key of Object.keys(this.results)) {
+            sumShares = sumShares.add(this.results[key].share);
+        }
+
+        if (sumShares.lessThan(1)) {
+            const raddCandidates = Object.keys(this.results).filter(key => key !== 'HUSBAND' && key !== 'WIFE');
+            if (raddCandidates.length > 0) {
+                let candidatesShareSum = new Fraction(0);
+                for (const key of raddCandidates) {
+                    candidatesShareSum = candidatesShareSum.add(this.results[key].share);
+                }
+                
+                let spouseShares = new Fraction(0);
+                if (this.results['HUSBAND']) spouseShares = spouseShares.add(this.results['HUSBAND'].share);
+                if (this.results['WIFE']) spouseShares = spouseShares.add(this.results['WIFE'].share);
+                
+                const raddTotal = new Fraction(1).sub(spouseShares);
+                
+                for (const key of raddCandidates) {
+                    const originalShare = this.results[key].share;
+                    const newShare = originalShare.div(candidatesShareSum).mul(raddTotal);
+                    this.results[key].share = newShare;
+                    this.explanations[key] += ` (تمت زيادة النصيب بالرد لعدم وجود عاصب).`;
+                }
+            } else {
+                // No non-spouse heirs, return the residue to the spouse(s)
+                if (this.results['HUSBAND']) {
+                    this.results['HUSBAND'].share = new Fraction(1);
+                    this.explanations['HUSBAND'] = `يرث الزوج فرضاً ورداً كامل التركة لعدم وجود أي وارث آخر.`;
+                }
+                if (this.results['WIFE']) {
+                    this.results['WIFE'].share = new Fraction(1);
+                    this.explanations['WIFE'] = `ترث الزوجة فرضاً ورداً كامل التركة لعدم وجود أي وارث آخر.`;
+                }
             }
         }
     }
