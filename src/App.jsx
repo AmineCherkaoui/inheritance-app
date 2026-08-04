@@ -233,6 +233,7 @@ export function CalculatorPage() {
           const caseData = {
             id: Date.now(),
             name: state.deceasedName || (state.deceasedGender === 'male' ? 'المتوفى' : 'المتوفاة'),
+            gender: state.deceasedGender,
             total_estate_value: parseFloat(state.totalEstate) || 0,
             funeral_expenses: 0,
             debts: parseFloat(state.debts) || 0,
@@ -404,6 +405,7 @@ export function CalculatorPage() {
     const caseData = {
       id: Date.now(),
       name: deceasedName || (deceasedGender === 'male' ? 'المتوفى' : 'المتوفاة'),
+      gender: deceasedGender,
       total_estate_value: parseFloat(totalEstate) || 0,
       funeral_expenses: 0,
       debts: parseFloat(debts) || 0,

@@ -141,6 +141,7 @@ export class InheritanceCalculator {
 
     constructor(caseData) {
         this.case = caseData;
+        this.gender = caseData.gender || (caseData.heirs && caseData.heirs.some(h => h.relationship === 'HUSBAND') ? 'female' : 'male');
         this.heirs = {};
         for (const h of caseData.heirs) {
             this.heirs[h.relationship] = {
@@ -631,35 +632,10 @@ export class InheritanceCalculator {
         }
 
         if (sumShares.lessThan(1)) {
-            const raddCandidates = Object.keys(this.results).filter(key => key !== 'HUSBAND' && key !== 'WIFE');
-            if (raddCandidates.length > 0) {
-                let candidatesShareSum = new Fraction(0);
-                for (const key of raddCandidates) {
-                    candidatesShareSum = candidatesShareSum.add(this.results[key].share);
-                }
-                
-                let spouseShares = new Fraction(0);
-                if (this.results['HUSBAND']) spouseShares = spouseShares.add(this.results['HUSBAND'].share);
-                if (this.results['WIFE']) spouseShares = spouseShares.add(this.results['WIFE'].share);
-                
-                const raddTotal = new Fraction(1).sub(spouseShares);
-                
-                for (const key of raddCandidates) {
-                    const originalShare = this.results[key].share;
-                    const newShare = originalShare.div(candidatesShareSum).mul(raddTotal);
-                    this.results[key].share = newShare;
-                    this.explanations[key] += ` (تمت زيادة النصيب بالرد لعدم وجود عاصب).`;
-                }
-            } else {
-                // No non-spouse heirs, return the residue to the spouse(s)
-                if (this.results['HUSBAND']) {
-                    this.results['HUSBAND'].share = new Fraction(1);
-                    this.explanations['HUSBAND'] = `يرث الزوج فرضاً ورداً كامل التركة لعدم وجود أي وارث آخر.`;
-                }
-                if (this.results['WIFE']) {
-                    this.results['WIFE'].share = new Fraction(1);
-                    this.explanations['WIFE'] = `ترث الزوجة فرضاً ورداً كامل التركة لعدم وجود أي وارث آخر.`;
-                }
+            for (const key of Object.keys(this.results)) {
+                const originalShare = this.results[key].share;
+                this.results[key].share = originalShare.div(sumShares);
+                this.explanations[key] += ` (تمت زيادة النصيب بالرد لعدم وجود عاصب).`;
             }
         }
     }
@@ -700,6 +676,9 @@ export class InheritanceCalculator {
             if (isAul) {
                 whyText += ` (تم تعديل النصيب بالعول نظراً لزيادة السهام عن أصل المسألة).`;
             }
+            if (this.gender === 'female') {
+                whyText = whyText.replace(/المتوفى/g, 'المتوفاة');
+            }
 
             distributions.push({
                 relationship,
@@ -734,6 +713,10 @@ export class InheritanceCalculator {
 
         for (const [relationship, heirObj] of Object.entries(this.heirs)) {
             if (heirObj.is_blocked && !this.results[relationship]) {
+                let whyText = this.explanations[relationship] || `${heirObj.displayName} محجوب من الميراث.`;
+                if (this.gender === 'female') {
+                    whyText = whyText.replace(/المتوفى/g, 'المتوفاة');
+                }
                 distributions.push({
                     relationship,
                     relationship_display: heirObj.displayName,
@@ -742,7 +725,7 @@ export class InheritanceCalculator {
                     percentage: 0,
                     total_value: 0,
                     per_person_value: 0,
-                    why: this.explanations[relationship] || `${heirObj.displayName} محجوب من الميراث.`
+                    why: whyText
                 });
             }
         }
