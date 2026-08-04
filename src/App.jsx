@@ -455,7 +455,7 @@ export function CalculatorPage() {
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         {errorMessage && (
           <div className="lg:col-span-2 p-4 bg-danger/10 border border-danger/30 text-danger rounded-2xl text-sm font-semibold text-center">
-            ⚠️ {errorMessage}
+            {errorMessage}
           </div>
         )}
         <div className='flex flex-col gap-6'>

@@ -95,7 +95,7 @@ export default function WillsForm({
                             transition={{ duration: 0.2 }}
                             className="text-xs font-bold text-danger flex items-center gap-1 mt-1 px-1"
                           >
-                            ⚠️ {errors[will.id]}
+                            {errors[will.id]}
                           </motion.div>
                         )}
                       </AnimatePresence>

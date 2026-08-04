@@ -88,7 +88,7 @@ export default function EstateForm({
                     transition={{ duration: 0.2 }}
                     className="text-xs font-bold text-danger flex items-center gap-1 px-1 mt-1"
                   >
-                    ⚠️ {errors.totalEstate}
+                    {errors.totalEstate}
                   </motion.div>
                 )}
               </AnimatePresence>
