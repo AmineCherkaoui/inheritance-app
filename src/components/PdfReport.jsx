@@ -232,7 +232,7 @@ export default function PdfReport({ result }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>بيانات التركة والوفاة</Text>
           <View style={styles.row}>
-            <Text style={styles.label}>اسم المتوفى</Text>
+            <Text style={styles.label}>{result.deceased_gender === 'female' ? 'اسم المتوفاة' : 'اسم المتوفى'}</Text>
             <Text style={styles.value}>{result.deceased_name}</Text>
           </View>
           <View style={styles.row}>

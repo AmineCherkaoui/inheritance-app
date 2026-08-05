@@ -12,6 +12,22 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }
 };
 
+export const renderExplanationWithQuranFont = (text) => {
+  if (!text) return null;
+  const parts = text.split(/(\[[^\]]+\])/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('[') && part.endsWith(']')) {
+      const verse = part.slice(1, -1);
+      return (
+        <span key={index} className="font-quran mx-0.5">
+          [{verse}]
+        </span>
+      );
+    }
+    return part;
+  });
+};
+
 function formatCurrency(value) {
   return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
@@ -119,7 +135,7 @@ function HeirRow({ dist, index, totalCount }) {
             {dist.why && (
               <div className="flex gap-2 items-start text-[11px] text-muted-foreground bg-default-50/70 p-2.5 rounded-xl border border-default-50">
                 <Award size={13} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">{dist.why}</p>
+                <p className="leading-relaxed">{renderExplanationWithQuranFont(dist.why)}</p>
               </div>
             )}
           </div>
@@ -393,7 +409,7 @@ export default function ResultsDisplay({ result }) {
                   <Award size={14} className="text-amber-500 shrink-0 mt-0.5" />
                   <div>
                     <span className="block text-xs font-bold text-foreground mb-0.5">{dist.relationship_display}</span>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{dist.why || 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
                   </div>
                 </div>
               ))}
@@ -411,7 +427,7 @@ export default function ResultsDisplay({ result }) {
                     <div>
                       <span className="font-bold text-foreground/60">{dist.relationship_display}</span>
                       {dist.count > 1 && <span className="text-muted-foreground mr-1">({dist.count})</span>}
-                      {dist.why && <span className="mr-1">— {dist.why}</span>}
+                      {dist.why && <span className="mr-1">— {renderExplanationWithQuranFont(dist.why)}</span>}
                     </div>
                   </div>
                 ))}

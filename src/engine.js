@@ -86,12 +86,12 @@ export class InheritanceCalculator {
             'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL',
             'FATHER_UNCLE_PATERNAL', 'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL'],
         'MOTHER': ['PATERNAL_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', 'MATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_PATERNAL_GREAT_GRANDMOTHER'],
-        'PATERNAL_GRANDFATHER': ['PATERNAL_GREAT_GRANDFATHER', 'PATERNAL_GREAT_GRANDMOTHER', 'FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+        'PATERNAL_GRANDFATHER': ['PATERNAL_GREAT_GRANDFATHER', 'PATERNAL_GREAT_GRANDMOTHER',
             'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
             'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
             'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL',
             'FATHER_UNCLE_PATERNAL', 'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL'],
-        'PATERNAL_GREAT_GRANDFATHER': ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+        'PATERNAL_GREAT_GRANDFATHER': [
             'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
             'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
             'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL',
@@ -308,11 +308,16 @@ export class InheritanceCalculator {
 
     _calculate_fixed_shares(remaining) {
         const hasChildren = this._has_children();
+        const activeSiblings = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER']
+            .filter(rel => this.heirs[rel] && !this.heirs[rel].is_blocked);
+        const hasActiveSiblings = activeSiblings.length > 0;
 
         if (this.heirs['HUSBAND']) {
             const share = InheritanceCalculator.FIXED_SHARES['HUSBAND'][hasChildren ? 'with_children' : 'without_children'];
             this.results['HUSBAND'] = { share, count: 1 };
-            this.explanations['HUSBAND'] = `يرث الزوج ${hasChildren ? 'الربع (1/4)' : 'النصف (1/2)'} فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى' : 'لعدم وجود فرع وارث للمتوفى'}.`;
+            this.explanations['HUSBAND'] = hasChildren
+                ? `يرث الزوج الربع (1/4) فرضاً لوجود فرع وارث للمتوفاة (الأولاد أو أولاد البنين وإن نزلوا)، لقوله تعالى: [فَإِنْ كَانَ لَهُنَّ وَلَدٌ فَلَكُمُ الرُّبُعُ مِمَّا تَرَكْنَ].`
+                : `يرث الزوج النصف (1/2) فرضاً لعدم وجود فرع وارث للمتوفاة (الأولاد أو أولاد البنين وإن نزلوا)، لقوله تعالى: [وَلَكُمْ نِصْفُ مَا تَرَكَ أَزْوَاجُكُمْ إِنْ لَمْ يَكُنْ لَهُنَّ وَلَدٌ].`;
             remaining = remaining.sub(share);
         }
 
@@ -320,7 +325,9 @@ export class InheritanceCalculator {
             const heir = this.heirs['WIFE'];
             const share = InheritanceCalculator.FIXED_SHARES['WIFE'][hasChildren ? 'with_children' : 'without_children'];
             this.results['WIFE'] = { share, count: heir.count };
-            this.explanations['WIFE'] = `ترث الزوجة (أو تشترك الزوجات بالتساوي في) ${hasChildren ? 'الثمن (1/8)' : 'الربع (1/4)'} فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى' : 'لعدم وجود فرع وارث للمتوفى'}.`;
+            this.explanations['WIFE'] = hasChildren
+                ? `ترث الزوجة (أو تشترك الزوجات بالتساوي في) الثمن (1/8) فرضاً لوجود فرع وارث للمتوفى (الأولاد أو أولاد البنين وإن نزلوا)، لقوله تعالى: [فَإِنْ كَانَ لَكُمْ وَلَدٌ فَلَهُنَّ الثُّمُنُ مِمَّا تَرَكْتُمْ].`
+                : `ترث الزوجة من زوجها الربع (1/4) فرضاً (أو تشترك فيه الزوجات بالتساوي) لعدم وجود فرع وارث للمتوفى (بنين أو بنات أو أولاد البنين)، والفرع الوارث هم: الأولاد بنون أو بنات، وأولاد الأبناء وإن نزلوا، أما أولاد البنات فهم فروع غير وارثين، لقوله تعالى: [وَلَهُنَّ الرُّبُعُ مِمَّا تَرَكْتُمْ إِنْ لَمْ يَكُنْ لَكُمْ وَلَدٌ].`;
             remaining = remaining.sub(share);
         }
 
@@ -328,25 +335,25 @@ export class InheritanceCalculator {
             if (hasChildren) {
                 const share = InheritanceCalculator.FIXED_SHARES['FATHER']['with_children'];
                 this.results['FATHER'] = { share, count: 1, asabah: true };
-                this.explanations['FATHER'] = `يرث الأب السدس (1/6) فرضاً لوجود فرع وارث، مع حقه في أخذ الباقي تعصيباً إن وجد.`;
+                this.explanations['FATHER'] = `يرث الأب السدس (1/6) فرضاً لوجود فرع وارث للمتوفى، لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ]، مع حقه في أخذ الباقي تعصيباً إن كان الفرع الوارث إناثاً فقط.`;
                 remaining = remaining.sub(share);
             }
         }
 
-        if (this.heirs['PATERNAL_GRANDFATHER'] && !this.heirs['PATERNAL_GRANDFATHER'].is_blocked) {
+        if (this.heirs['PATERNAL_GRANDFATHER'] && !this.heirs['PATERNAL_GRANDFATHER'].is_blocked && !hasActiveSiblings) {
             if (hasChildren) {
                 const share = new Fraction(1, 6);
                 this.results['PATERNAL_GRANDFATHER'] = { share, count: 1, asabah: true };
-                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب السدس (1/6) فرضاً لوجود فرع وارث وعدم وجود الأب، مع حقه في أخذ الباقي تعصيباً إن وجد.`;
+                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب (أبو الأب) السدس (1/6) فرضاً عند عدم وجود الأب ووجود فرع وارث، كونه يقوم مقام الأب عند فقده، مع حقه في أخذ الباقي تعصيباً إن كان الفرع إناثاً فقط.`;
                 remaining = remaining.sub(share);
             }
         }
 
-        if (this.heirs['PATERNAL_GREAT_GRANDFATHER'] && !this.heirs['PATERNAL_GREAT_GRANDFATHER'].is_blocked) {
+        if (this.heirs['PATERNAL_GREAT_GRANDFATHER'] && !this.heirs['PATERNAL_GREAT_GRANDFATHER'].is_blocked && !hasActiveSiblings) {
             if (hasChildren) {
                 const share = new Fraction(1, 6);
                 this.results['PATERNAL_GREAT_GRANDFATHER'] = { share, count: 1, asabah: true };
-                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب السدس (1/6) فرضاً لوجود فرع وارث وعدم وجود الأب أو الجد، مع حقه في أخذ الباقي تعصيباً إن وجد.`;
+                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب السدس (1/6) فرضاً عند عدم وجود الأب أو الجد القريب ووجود فرع وارث للمتوفى، مع حقه في تعصيب الباقي إن كان الفرع إناثاً.`;
                 remaining = remaining.sub(share);
             }
         }
@@ -364,7 +371,9 @@ export class InheritanceCalculator {
 
             const share = InheritanceCalculator.FIXED_SHARES['MOTHER'][useOneSixth ? 'with_children' : 'without_children'];
             this.results['MOTHER'] = { share, count: 1 };
-            this.explanations['MOTHER'] = `ترث الأم ${useOneSixth ? 'السدس (1/6)' : 'الثلث (1/3)'} فرضاً ${useOneSixth ? (hasChildren ? 'لوجود فرع وارث للمتوفى' : 'لوجود جمع من الإخوة للمتوفى') : 'لعدم وجود فرع وارث أو جمع من الإخوة للمتوفى'}.`;
+            this.explanations['MOTHER'] = useOneSixth
+                ? `ترث الأم السدس (1/6) فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ])' : 'لوجود جمع من الإخوة للمتوفى (اثنان فأكثر من أي جهة كانوا، لقوله تعالى: [فَإِنْ كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ])'}.`
+                : `ترث الأم الثلث (1/3) فرضاً لعدم وجود فرع وارث للمتوفى وعدم وجود جمع من الإخوة، لقوله تعالى: [فَإِنْ لَمْ يَكُنْ لَهُ وَلَدٌ وَوَرِثَهُ أَبَوَاهُ فَلِأُمِّهِ الثُّلُثُ].`;
             remaining = remaining.sub(share);
         }
 
@@ -374,8 +383,8 @@ export class InheritanceCalculator {
             const share = InheritanceCalculator.FIXED_SHARES['DAUGHTER'][heir.count === 1 ? 'single' : 'multiple'];
             this.results['DAUGHTER'] = { share, count: heir.count };
             this.explanations['DAUGHTER'] = heir.count === 1
-                ? `ترث البنت النصف (1/2) فرضاً لانفرادها ولعدم وجود ابن يعصبها.`
-                : `يرث البنات الثلثين (2/3) فرضاً لتعددهن ولعدم وجود ابن يعصبهن (توزع بالتساوي).`;
+                ? `ترث البنت الصلبية النصف (1/2) فرضاً لانفرادها ولعدم وجود ابن صلب يعصبها، لقوله تعالى: [وَإِنْ كَانَتْ وَاحِدَةً فَلَهَا النِّصْفُ].`
+                : `يرث البنات الصلبيات الثلثين (2/3) فرضاً لتعددهن (اثنتين فأكثر) ولعدم وجود ابن صلب يعصبهن (توزع بالتساوي)، لقوله تعالى: [فَإِنْ كُنَّ نِسَاءً فَوْقَ اثْنَتَيْنِ فَلَهُنَّ ثُلُثَا مَا تَرَكَ].`;
             remaining = remaining.sub(share);
         }
 
@@ -385,19 +394,19 @@ export class InheritanceCalculator {
                 const share = heir.count === 1 ? new Fraction(1, 2) : new Fraction(2, 3);
                 this.results['GRANDDAUGHTER'] = { share, count: heir.count };
                 this.explanations['GRANDDAUGHTER'] = heir.count === 1
-                    ? `ترث بنت الابن النصف (1/2) فرضاً لعدم وجود فرع وارث أعلى منها ولا عاصب.`
-                    : `يرث بنات الابن الثلثين (2/3) فرضاً لتعددهن ولعدم وجود فرع وارث أعلى منهن ولا عاصب (توزع بالتساوي).`;
+                    ? `ترث بنت الابن النصف (1/2) فرضاً عند عدم وجود فرع وارث أعلى منها (كالولد الصلبي) وعدم وجود ابن ابن يعصبها.`
+                    : `يرث بنات الابن الثلثين (2/3) فرضاً لتعددهن ولعدم وجود فرع وارث أعلى منهن ولا عاصب يعصبهن (توزع بالتساوي بينهن).`;
                 remaining = remaining.sub(share);
             } else {
                 const daughterCount = this.heirs['DAUGHTER'].count;
                 if (daughterCount === 1) {
                     const share = new Fraction(1, 6);
                     this.results['GRANDDAUGHTER'] = { share, count: heir.count };
-                    this.explanations['GRANDDAUGHTER'] = `ترث بنت الابن (أو بنات الابن بالتساوي) السدس (1/6) فرضاً تكملةً للثلثين لوجود بنت واحدة صلبية وارثة أعلى منها.`;
+                    this.explanations['GRANDDAUGHTER'] = `ترث بنت الابن (أو بنات الابن بالتساوي) السدس (1/6) فرضاً تكملةً للثلثين لوجود بنت صلبية واحدة وارثة أعلى منها مستحقة للنصف.`;
                     remaining = remaining.sub(share);
                 } else {
                     this.heirs['GRANDDAUGHTER'].is_blocked = true;
-                    this.explanations['GRANDDAUGHTER'] = `بنت الابن محجوبة لاستغراق البنات الصلبيات فرض الثلثين (2/3).`;
+                    this.explanations['GRANDDAUGHTER'] = `بنت الابن محجوبة من الميراث لاستغراق البنات الصلبيات فرض الثلثين (2/3).`;
                 }
             }
         }
@@ -411,13 +420,13 @@ export class InheritanceCalculator {
                 const share = heir.count === 1 ? new Fraction(1, 2) : new Fraction(2, 3);
                 this.results['GREAT_GRANDDAUGHTER'] = { share, count: heir.count };
                 this.explanations['GREAT_GRANDDAUGHTER'] = heir.count === 1
-                    ? `ترث بنت ابن الابن النصف (1/2) فرضاً لعدم وجود فرع وارث أعلى منها ولا عاصب.`
+                    ? `ترث بنت ابن الابن النصف (1/2) فرضاً لانفرادها ولعدم وجود فرع وارث أعلى منها ولا عاصب يعصبها.`
                     : `يرث بنات ابن الابن الثلثين (2/3) فرضاً لتعددهن لعدم وجود فرع وارث أعلى منهن ولا عاصب.`;
                 remaining = remaining.sub(share);
             } else if (daughterCount + granddaughterCount === 1) {
                 const share = new Fraction(1, 6);
                 this.results['GREAT_GRANDDAUGHTER'] = { share, count: heir.count };
-                this.explanations['GREAT_GRANDDAUGHTER'] = `ترث بنت ابن الابن السدس (1/6) فرضاً تكملة للثلثين لوجود بنت واحدة (أو بنت ابن) أعلى منها.`;
+                this.explanations['GREAT_GRANDDAUGHTER'] = `ترث بنت ابن الابن السدس (1/6) فرضاً تكملة للثلثين لوجود بنت واحدة (أو بنت ابن) أعلى منها مستحقة للنصف.`;
                 remaining = remaining.sub(share);
             } else {
                 this.heirs['GREAT_GRANDDAUGHTER'].is_blocked = true;
@@ -431,8 +440,8 @@ export class InheritanceCalculator {
                 const share = heir.count === 1 ? new Fraction(1, 2) : new Fraction(2, 3);
                 this.results['FULL_SISTER'] = { share, count: heir.count };
                 this.explanations['FULL_SISTER'] = heir.count === 1
-                    ? `ترث الأخت الشقيقة النصف (1/2) فرضاً لانفرادها وعدم وجود فرع وارث أو أصل ذكر أو عاصب.`
-                    : `يرث الأخوات الشقيقات الثلثين (2/3) فرضاً لتعددهن وعدم وجود فرع وارث أو أصل ذكر أو عاصب (توزع بالتساوي).`;
+                    ? `ترث الأخت الشقيقة النصف (1/2) فرضاً لانفرادها وعدم وجود فرع وارث أو أصل ذكر (أب/جد) أو أخ شقيق يعصبها، لقوله تعالى: [إِنِ امْرُؤٌ هَلَكَ لَيْسَ لَهُ وَلَدٌ وَلَهُ أُخْتٌ فَلَهَا نِصْفُ مَا تَرَكَ].`
+                    : `يرث الأخوات الشقيقات الثلثين (2/3) فرضاً لتعددهن وعدم وجود فرع وارث أو أصل ذكر أو عاصب يعصبهن (توزع بالتساوي)، لقوله تعالى: [فَإِنْ كَانَتَا اثْنَتَيْنِ فَلَهُمَا الثُّلُثَانِ مِمَّا تَرَكَ].`;
                 remaining = remaining.sub(share);
             }
         }
@@ -447,10 +456,10 @@ export class InheritanceCalculator {
                 let share;
                 if (totalMaternal === 1) {
                     share = new Fraction(1, 6);
-                    this.explanations[rel] = `يرث الأخ/الأخت لأم السدس (1/6) فرضاً لانفراده وعدم وجود فرع وارث أو أصل ذكر.`;
+                    this.explanations[rel] = `يرث الأخ/الأخت لأم السدس (1/6) فرضاً لانفراده وعدم وجود فرع وارث للمتوفى ولا أصل ذكر وارث (تسمى كلالة)، لقوله تعالى: [وَإِنْ كَانَ رَجُلٌ يُورَثُ كَلَالَةً أَوِ امْرَأَةٌ وَلَهُ أَخٌ أَوْ أُخْتٌ فَلِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ].`;
                 } else {
                     share = new Fraction(1, 3).mul(new Fraction(heir.count, totalMaternal));
-                    this.explanations[rel] = `يرث الإخوة لأم الثلث (1/3) فرضاً يشتركون فيه بالذمة (بالتساوي للذكر مثل الأنثى) لتعددهم وعدم وجود فرع وارث أو أصل ذكر.`;
+                    this.explanations[rel] = `يرث الإخوة لأم الثلث (1/3) فرضاً يشتركون فيه بالتساوي (للذكر مثل الأنثى دون تفضيل) لتعددهم وعدم وجود فرع وارث ولا أصل ذكر وارث، لقوله تعالى: [فَإِنْ كَانُوا أَكْثَرَ مِنْ ذَلِكَ فَهُمْ شُرَكَاءُ فِي الثُّلُثِ].`;
                 }
                 this.results[rel] = { share, count: heir.count };
                 remaining = remaining.sub(share);
@@ -466,8 +475,8 @@ export class InheritanceCalculator {
             for (const gm of activeGrandmothers) {
                 this.results[gm] = { share: shareEach, count: 1 };
                 this.explanations[gm] = activeGrandmothers.length === 1
-                    ? `ترث الجدة السدس (1/6) فرضاً لعدم وجود الأم.`
-                    : `ترث الجدة السدس (1/6) فرضاً تشترك فيه مع الجدات الأخريات بالتساوي لعدم وجود الأم.`;
+                    ? `ترث الجدة السدس (1/6) فرضاً عند عدم وجود الأم الحاجبة لها كلياً.`
+                    : `ترث الجدة السدس (1/6) فرضاً تشترك فيه مع الجدات الوارثات بالتساوي لعدم وجود الأم.`;
                 remaining = remaining.sub(shareEach);
             }
         }
@@ -480,6 +489,126 @@ export class InheritanceCalculator {
             return;
         }
 
+        // Special case: Grandfather with Siblings (الجد مع الإخوة) under Maliki school (Moroccan Family Code)
+        const activeSiblings = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER']
+            .filter(rel => this.heirs[rel] && !this.heirs[rel].is_blocked);
+        
+        let activeGFKey = null;
+        if (this.heirs['PATERNAL_GRANDFATHER'] && !this.heirs['PATERNAL_GRANDFATHER'].is_blocked) {
+            activeGFKey = 'PATERNAL_GRANDFATHER';
+        } else if (this.heirs['PATERNAL_GREAT_GRANDFATHER'] && !this.heirs['PATERNAL_GREAT_GRANDFATHER'].is_blocked) {
+            activeGFKey = 'PATERNAL_GREAT_GRANDFATHER';
+        }
+
+        if (activeGFKey && activeSiblings.length > 0) {
+            const FB = this.heirs['FULL_BROTHER'] ? this.heirs['FULL_BROTHER'].count : 0;
+            const FS = this.heirs['FULL_SISTER'] ? this.heirs['FULL_SISTER'].count : 0;
+            const PB = this.heirs['PATERNAL_BROTHER'] ? this.heirs['PATERNAL_BROTHER'].count : 0;
+            const PS = this.heirs['PATERNAL_SISTER'] ? this.heirs['PATERNAL_SISTER'].count : 0;
+
+            // Option 1: المقاسمة (Sharing)
+            // Grandfather counts as a brother (2 shares). Brothers count as 2 shares. Sisters count as 1 share.
+            const totalParts = 2 + 2 * (FB + PB) + (FS + PS);
+            const shareSharing = remaining.mul(new Fraction(2, totalParts));
+
+            // Check if there are other heirs of fixed shares
+            const otherFixedHeirsExist = ['HUSBAND', 'WIFE', 'MOTHER', 'DAUGHTER', 'GRANDDAUGHTER', 'GREAT_GRANDDAUGHTER', 
+                                          'PATERNAL_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', 'MATERNAL_GREAT_GRANDMOTHER', 
+                                          'PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_PATERNAL_GREAT_GRANDMOTHER']
+                                          .some(r => this.heirs[r] && !this.heirs[r].is_blocked);
+
+            // Option 2: ثلث الباقي (1/3 of remainder) or ثلث جميع المال (1/3 of total)
+            const shareOneThird = otherFixedHeirsExist ? remaining.mul(new Fraction(1, 3)) : new Fraction(1, 3);
+
+            // Option 3: سدس جميع المال (1/6 of total)
+            const shareOneSixth = otherFixedHeirsExist ? new Fraction(1, 6) : new Fraction(0);
+
+            // Determine the best option (الأحظ)
+            let grandfatherShare = shareSharing;
+            let explanationOption = 'بالمقاسمة مع الإخوة كأخ شقيق كونه الأحظ له';
+
+            if (shareOneThird.greaterThan(grandfatherShare)) {
+                grandfatherShare = shareOneThird;
+                explanationOption = otherFixedHeirsExist 
+                    ? 'بفرض ثلث الباقي كونه الأحظ له لوجود أصحاب فروض مع الإخوة'
+                    : 'بفرض ثلث التركة كونه الأحظ له مع الإخوة';
+            }
+            if (shareOneSixth.greaterThan(grandfatherShare)) {
+                grandfatherShare = shareOneSixth;
+                explanationOption = 'بفرض السدس كونه الأحظ له لوجود أصحاب فروض مع الإخوة';
+            }
+
+            // Assign grandfather's share
+            this.results[activeGFKey] = { share: grandfatherShare, count: 1 };
+            const gfName = this.heirs[activeGFKey].displayName;
+            this.explanations[activeGFKey] = `يرث ${gfName} ${explanationOption}.`;
+
+            // Calculate remaining share for siblings
+            const siblingShare = remaining.sub(grandfatherShare);
+
+            if (siblingShare.greaterThan(0)) {
+                if (FB > 0 || FS > 0) {
+                    // Full siblings present
+                    if (FB > 0) {
+                        const totalFullParts = 2 * FB + FS;
+                        const brotherShare = siblingShare.mul(new Fraction(2 * FB, totalFullParts));
+                        this.results['FULL_BROTHER'] = { share: brotherShare, count: FB };
+                        this.explanations['FULL_BROTHER'] = `يرث الأخ الشقيق (أو الإخوة الأشقاء بالتساوي) الباقي بعد نصيب الجد بالتعصيب للذكر مثل حظ الأنثيين.`;
+                        
+                        if (FS > 0) {
+                            const sisterShare = siblingShare.mul(new Fraction(FS, totalFullParts));
+                            this.results['FULL_SISTER'] = { share: sisterShare, count: FS };
+                            this.explanations['FULL_SISTER'] = `ترث الأخت الشقيقة (أو الأخوات الشقيقات بالتساوي) بالتعصيب مع الإخوة الأشقاء.`;
+                        }
+                    } else {
+                        // Only full sisters, no full brothers
+                        const sisterMaxFraction = new Fraction(FS === 1 ? 1 : 2, FS === 1 ? 2 : 3);
+                        const actualSisterShare = siblingShare.greaterThan(sisterMaxFraction) ? sisterMaxFraction : siblingShare;
+                        this.results['FULL_SISTER'] = { share: actualSisterShare, count: FS };
+                        this.explanations['FULL_SISTER'] = `ترث الأخت الشقيقة (أو الأخوات الشقيقات بالتساوي) فرضاً ${FS === 1 ? 'النصف (1/2)' : 'الثلثين (2/3)'} من التركة كحد أقصى.`;
+                        
+                        const paternalShare = siblingShare.sub(actualSisterShare);
+                        if (paternalShare.greaterThan(0) && (PB > 0 || PS > 0)) {
+                            const totalPaternalParts = 2 * PB + PS;
+                            if (PB > 0) {
+                                const pBrotherShare = paternalShare.mul(new Fraction(2 * PB, totalPaternalParts));
+                                this.results['PATERNAL_BROTHER'] = { share: pBrotherShare, count: PB };
+                                this.explanations['PATERNAL_BROTHER'] = `يرث الأخ لأب الباقي بعد نصيب الجد والأخوات الشقيقات بالتعصيب.`;
+                            }
+                            if (PS > 0) {
+                                const pSisterShare = paternalShare.mul(new Fraction(PS, totalPaternalParts));
+                                this.results['PATERNAL_SISTER'] = { share: pSisterShare, count: PS };
+                                this.explanations['PATERNAL_SISTER'] = `ترث الأخت لأب الباقي بعد نصيب الجد والأخوات الشقيقات بالتعصيب.`;
+                            }
+                        }
+                    }
+
+                    // Block paternal siblings from sharing directly if full siblings took everything
+                    for (const rel of ['PATERNAL_BROTHER', 'PATERNAL_SISTER']) {
+                        if (this.heirs[rel] && !this.results[rel]) {
+                            this.heirs[rel].is_blocked = true;
+                            this.heirs[rel].blocked_by = FB > 0 ? 'FULL_BROTHER' : 'FULL_SISTER';
+                            this.explanations[rel] = `${this.heirs[rel].displayName} محجوب لوجود الإخوة الأشقاء واستغراقهم التركة مضافاً إلى الجد.`;
+                        }
+                    }
+                } else {
+                    // No full siblings, only paternal siblings
+                    const totalPaternalParts = 2 * PB + PS;
+                    if (PB > 0) {
+                        const pBrotherShare = siblingShare.mul(new Fraction(2 * PB, totalPaternalParts));
+                        this.results['PATERNAL_BROTHER'] = { share: pBrotherShare, count: PB };
+                        this.explanations['PATERNAL_BROTHER'] = `يرث الأخ لأب الباقي بعد نصيب الجد بالتعصيب للذكر مثل حظ الأنثيين.`;
+                    }
+                    if (PS > 0) {
+                        const pSisterShare = siblingShare.mul(new Fraction(PS, totalPaternalParts));
+                        this.results['PATERNAL_SISTER'] = { share: pSisterShare, count: PS };
+                        this.explanations['PATERNAL_SISTER'] = `ترث الأخت لأب الباقي بعد نصيب الجد بالتعصيب مع الإخوة لأب.`;
+                    }
+                }
+            }
+            return;
+        }
+
         // 1. Children
         if (this.heirs['SON']) {
             const sonCount = this.heirs['SON'].count;
@@ -488,12 +617,12 @@ export class InheritanceCalculator {
 
             const sonShare = remaining.mul(new Fraction(sonCount * 2, totalParts));
             this.results['SON'] = { share: sonShare, count: sonCount };
-            this.explanations['SON'] = `يرث الابن (أو الأبناء) تعصيباً (العصبة بالغير) مع البنات إن وجدن، ويكون الباقي لهن ولهم للذكر مثل حظ الأنثيين.`;
+            this.explanations['SON'] = `يرث الابن (أو الأبناء بالتساوي) الباقي من التركة تعصيباً (عصبة بالنفس كونه أقرب عاصب ذكر للمتوفى)، ويشتركون مع البنات بالتعصيب بالغير للذكر مثل حظ الأنثيين، لقوله تعالى: [يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ].`;
 
             if (daughterCount > 0) {
                 const daughterShare = remaining.mul(new Fraction(daughterCount, totalParts));
                 this.results['DAUGHTER'] = { share: daughterShare, count: daughterCount };
-                this.explanations['DAUGHTER'] = `ترث البنت (أو البنات) بالتعصيب مع الابن (للذكر مثل حظ الأنثيين).`;
+                this.explanations['DAUGHTER'] = `ترث البنت (أو البنات بالتساوي) بالتعصيب بالغير مع الابن (للذكر مثل حظ الأنثيين)، لقوله تعالى: [يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ].`;
             }
             return;
         }
@@ -506,12 +635,12 @@ export class InheritanceCalculator {
 
             const sonShare = remaining.mul(new Fraction(sonCount * 2, totalParts));
             this.results['GRANDSON'] = { share: sonShare, count: sonCount };
-            this.explanations['GRANDSON'] = `يرث ابن الابن الباقي تعصيباً (للذكر مثل حظ الأنثيين مع الإناث المساويات له).`;
+            this.explanations['GRANDSON'] = `يرث ابن الابن الباقي تعصيباً كونه يقوم مقام الابن عند عدمه، ويشترك مع بنات الابن بالتعصيب بالغير (للذكر مثل حظ الأنثيين).`;
 
             if (daughterCount > 0) {
                 const daughterShare = remaining.mul(new Fraction(daughterCount, totalParts));
                 this.results['GRANDDAUGHTER'] = { share: daughterShare, count: daughterCount };
-                this.explanations['GRANDDAUGHTER'] = `ترث بنت الابن بالتعصيب مع ابن الابن (للذكر مثل حظ الأنثيين).`;
+                this.explanations['GRANDDAUGHTER'] = `ترث بنت الابن بالتعصيب بالغير مع ابن الابن (للذكر مثل حظ الأنثيين) لعدم وجود فرع وارث أعلى.`;
             }
             return;
         }
@@ -524,12 +653,12 @@ export class InheritanceCalculator {
 
             const sonShare = remaining.mul(new Fraction(sonCount * 2, totalParts));
             this.results['GREAT_GRANDSON'] = { share: sonShare, count: sonCount };
-            this.explanations['GREAT_GRANDSON'] = `يرث ابن ابن الابن الباقي تعصيباً.`;
+            this.explanations['GREAT_GRANDSON'] = `يرث ابن ابن الابن الباقي تعصيباً لعدم وجود فروع وارثة ذكر أعلى درجة منه.`;
 
             if (daughterCount > 0) {
                 const daughterShare = remaining.mul(new Fraction(daughterCount, totalParts));
                 this.results['GREAT_GRANDDAUGHTER'] = { share: daughterShare, count: daughterCount };
-                this.explanations['GREAT_GRANDDAUGHTER'] = `ترث بنت ابن الابن بالتعصيب مع ابن ابن الابن.`;
+                this.explanations['GREAT_GRANDDAUGHTER'] = `ترث بنت ابن الابن بالتعصيب بالغير مع ابن ابن الابن (للذكر مثل حظ الأنثيين).`;
             }
             return;
         }
@@ -537,11 +666,11 @@ export class InheritanceCalculator {
         // 4. Father
         if (this.heirs['FATHER'] && !this.results['FATHER']) {
             this.results['FATHER'] = { share: remaining, count: 1 };
-            this.explanations['FATHER'] = `يرث الأب الباقي تعصيباً لعدم وجود فرع وارث ذكر للمتوفى.`;
+            this.explanations['FATHER'] = `يرث الأب الباقي تعصيباً (عصبة بالنفس) لعدم وجود فرع وارث ذكر (بنين أو أولاد البنين)، للحديث الشريف: (ألحقوا الفرائض بأهلها، فما بقي فهو لأولى رجل ذكر).`;
             return;
         } else if (this.results['FATHER'] && this.results['FATHER'].asabah) {
             this.results['FATHER'].share = this.results['FATHER'].share.add(remaining);
-            this.explanations['FATHER'] = `يرث الأب السدس فرضاً لوجود فرع وارث أنثى بالإضافة إلى الباقي تعصيباً.`;
+            this.explanations['FATHER'] = `يرث الأب السدس فرضاً لوجود فرع وارث أنثى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ]) مضافاً إليه الباقي تعصيباً لعدم وجود فرع وارث ذكر للمتوفى.`;
             return;
         }
 
@@ -549,10 +678,10 @@ export class InheritanceCalculator {
         if (this.heirs['PATERNAL_GRANDFATHER'] && !this.heirs['PATERNAL_GRANDFATHER'].is_blocked) {
             if (!this.results['PATERNAL_GRANDFATHER']) {
                 this.results['PATERNAL_GRANDFATHER'] = { share: remaining, count: 1 };
-                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب الباقي تعصيباً لعدم وجود الأب أو فرع وارث ذكر للمتوفى.`;
+                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب (أبو الأب) الباقي تعصيباً عند عدم وجود الأب أو فرع وارث ذكر للمتوفى، كونه يقوم مقام الأب.`;
             } else if (this.results['PATERNAL_GRANDFATHER'] && this.results['PATERNAL_GRANDFATHER'].asabah) {
                 this.results['PATERNAL_GRANDFATHER'].share = this.results['PATERNAL_GRANDFATHER'].share.add(remaining);
-                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب السدس فرضاً لوجود فرع وارث أنثى وعدم وجود الأب بالإضافة إلى الباقي تعصيباً.`;
+                this.explanations['PATERNAL_GRANDFATHER'] = `يرث الجد لأب السدس فرضاً لوجود فرع وارث أنثى بالإضافة إلى الباقي تعصيباً لعدم وجود الأب وفرع ذكر.`;
             }
             return;
         }
@@ -560,10 +689,10 @@ export class InheritanceCalculator {
         if (this.heirs['PATERNAL_GREAT_GRANDFATHER'] && !this.heirs['PATERNAL_GREAT_GRANDFATHER'].is_blocked) {
             if (!this.results['PATERNAL_GREAT_GRANDFATHER']) {
                 this.results['PATERNAL_GREAT_GRANDFATHER'] = { share: remaining, count: 1 };
-                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب الباقي تعصيباً لعدم وجود الأب أو الجد أو فرع وارث ذكر للمتوفى.`;
+                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب الباقي تعصيباً لعدم وجود الأب أو الجد القريب أو فرع وارث ذكر للمتوفى.`;
             } else if (this.results['PATERNAL_GREAT_GRANDFATHER'] && this.results['PATERNAL_GREAT_GRANDFATHER'].asabah) {
                 this.results['PATERNAL_GREAT_GRANDFATHER'].share = this.results['PATERNAL_GREAT_GRANDFATHER'].share.add(remaining);
-                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب السدس فرضاً لوجود فرع وارث أنثى وعدم وجود الأب أو الجد بالإضافة إلى الباقي تعصيباً.`;
+                this.explanations['PATERNAL_GREAT_GRANDFATHER'] = `يرث أبو أبو الأب السدس فرضاً لوجود فرع وارث أنثى وعدم وجود الأب أو الجد القريب بالإضافة إلى الباقي تعصيباً.`;
             }
             return;
         }
@@ -578,11 +707,11 @@ export class InheritanceCalculator {
             const totalParts = (brotherCount * 2) + sisterCount;
 
             this.results['FULL_BROTHER'] = { share: remaining.mul(new Fraction(brotherCount * 2, totalParts)), count: brotherCount };
-            this.explanations['FULL_BROTHER'] = `يرث الأخ الشقيق الباقي تعصيباً (العصبة بالغير مع الأخوات إن وجدن للذكر مثل حظ الأنثيين).`;
+            this.explanations['FULL_BROTHER'] = `يرث الأخ الشقيق (أو الإخوة الأشقاء بالتساوي) الباقي تعصيباً كونه أقرب عاصب ذكر متبقي (عصبة بالنفس)، ويشتركون مع الأخوات الشقيقات بالتعصيب بالغير (للذكر مثل حظ الأنثيين)، لقوله تعالى: [وَإِنْ كَانُوا إِخْوَةً رِجَالًا وَنِسَاءً فَلِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ].`;
 
             if (sisterCount > 0) {
                 this.results['FULL_SISTER'] = { share: remaining.mul(new Fraction(sisterCount, totalParts)), count: sisterCount };
-                this.explanations['FULL_SISTER'] = `ترث الأخت الشقيقة بالتعصيب مع الأخ الشقيق (للذكر مثل حظ الأنثيين).`;
+                this.explanations['FULL_SISTER'] = `ترث الأخت الشقيقة بالتعصيب بالغير مع الأخ الشقيق (للذكر مثل حظ الأنثيين)، لقوله تعالى: [وَإِنْ كَانُوا إِخْوَةً رِجَالًا وَنِسَاءً فَلِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ].`;
             }
             return;
         }
@@ -597,11 +726,11 @@ export class InheritanceCalculator {
             const totalParts = (brotherCount * 2) + sisterCount;
 
             this.results['PATERNAL_BROTHER'] = { share: remaining.mul(new Fraction(brotherCount * 2, totalParts)), count: brotherCount };
-            this.explanations['PATERNAL_BROTHER'] = `يرث الأخ لأب الباقي تعصيباً.`;
+            this.explanations['PATERNAL_BROTHER'] = `يرث الأخ لأب (أو الإخوة لأب بالتساوي) الباقي تعصيباً (عصبة بالنفس) لعدم وجود عاصب أقرب كالأخ الشقيق أو الفروع أو الأصول الذكور، ويشتركون مع الأخوات لأب بالتعصيب بالغير.`;
 
             if (sisterCount > 0) {
                 this.results['PATERNAL_SISTER'] = { share: remaining.mul(new Fraction(sisterCount, totalParts)), count: sisterCount };
-                this.explanations['PATERNAL_SISTER'] = `ترث الأخت لأب بالتعصيب مع الأخ لأب.`;
+                this.explanations['PATERNAL_SISTER'] = `ترث الأخت لأب بالتعصيب بالغير مع الأخ لأب (للذكر مثل حظ الأنثيين).`;
             }
             return;
         }
@@ -733,6 +862,7 @@ export class InheritanceCalculator {
         return {
             case_id: this.case.id,
             deceased_name: this.case.name,
+            deceased_gender: this.gender,
             total_estate: this.case.total_estate_value,
             deductions: (this.case.funeral_expenses || 0) + (this.case.debts || 0),
             original_net_estate: this.original_net_estate !== undefined ? this.original_net_estate : this.net_estate,

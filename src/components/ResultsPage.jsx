@@ -13,6 +13,7 @@ import { InheritanceCalculator } from '../engine';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from './PdfReport';
 import { exportExcelReport } from './ExcelReport';
+import { renderExplanationWithQuranFont } from './ResultsDisplay';
 
 function formatCurrency(value) {
   return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' د.م.';
@@ -100,6 +101,7 @@ export default function ResultsPage() {
           const caseData = {
             id: Date.now(),
             name: state.deceasedName || (state.deceasedGender === 'male' ? 'المتوفى' : 'المتوفاة'),
+            gender: state.deceasedGender,
             total_estate_value: parseFloat(state.totalEstate) || 0,
             funeral_expenses: 0,
             debts: parseFloat(state.debts) || 0,
@@ -145,7 +147,7 @@ export default function ResultsPage() {
     }));
     const state = {
       deceasedName: result.deceased_name,
-      deceasedGender: heirs['HUSBAND'] ? 'female' : 'male',
+      deceasedGender: result.deceased_gender || (heirs['HUSBAND'] ? 'female' : 'male'),
       totalEstate: result.total_estate,
       debts: result.deductions,
       heirs,
@@ -557,7 +559,7 @@ export default function ResultsPage() {
                     <div>
                       <span className="text-xs font-bold text-foreground">{dist.relationship_display}</span>
                       {dist.count > 1 && <span className="text-[10px] text-muted-foreground mr-1">({dist.count})</span>}
-                      {dist.why && <span className="block text-[10px] text-muted-foreground mt-0.5">{dist.why}</span>}
+                      {dist.why && <span className="block text-[10px] text-muted-foreground mt-0.5">{renderExplanationWithQuranFont(dist.why)}</span>}
                     </div>
                   </div>
                 ))}
@@ -567,7 +569,7 @@ export default function ResultsPage() {
 
           {/* Table Card 4: Explanations section */}
           <Card className="rounded-3xl border border-default-200 bg-white p-5 shadow-xs">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-3">
+            <span className="text-[14px] font-bold text-muted-foreground uppercase tracking-wider block mb-3">
               تفاصيل وتوجيه الأنصبة والوصايا
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -576,7 +578,7 @@ export default function ResultsPage() {
                   <Award size={14} className="text-amber-500 shrink-0 mt-0.5" />
                   <div>
                     <span className="block text-xs font-bold text-foreground mb-0.5">{dist.relationship_display}</span>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">{dist.why || 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
+                    <p className="text-[14px] text-muted-foreground leading-relaxed">{dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
                   </div>
                 </div>
               ))}
@@ -590,7 +592,9 @@ export default function ResultsPage() {
           <motion.div initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
             <Card className="rounded-3xl border border-default-200 bg-white p-5 shadow-xs space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-default-100">
-                <span className="text-xs font-black text-muted-foreground uppercase">المتوفى/المتوفاة</span>
+                <span className="text-xs font-black text-muted-foreground uppercase">
+                  {result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى'}
+                </span>
                 <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-lg">
                   {result.deceased_name}
                 </span>

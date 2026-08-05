@@ -4,12 +4,33 @@
   font-weight: normal;
   font-style: normal;
 }
+
+@font-face {
+  font-family: 'Aalmaghribi';
+  src: url('/fonts/Aalmaghribi.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-quran {
+  font-family: 'Aalmaghribi', serif !important;
+  font-size: 1.3em;
+  line-height: 1.6;
+  color: rgb(184, 115, 51);
+  letter-spacing: normal !important;
+  word-spacing: 0.15em !important;
+  text-rendering: optimizeLegibility !important;
+  font-variant-ligatures: common-ligatures contextual discretionary-ligatures historical-ligatures !important;
+  font-feature-settings: "liga" on, "calt" on, "ccmp" on, "locl" on, "mset" on !important;
+}
+
 @font-face {
   font-family: 'Tajawal';
   src: url('/fonts/Tajawal-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Tajawal';
   src: url('/fonts/Tajawal-Bold.ttf') format('truetype');
@@ -52,7 +73,12 @@
   --danger-color: #dc2626;
 }
 
-*, body, input, select, textarea, button {
+*,
+body,
+input,
+select,
+textarea,
+button {
   font-family: 'Tajawal', 'Outfit', 'Inter', sans-serif !important;
 }
 
