@@ -9,13 +9,14 @@ export async function exportExcelReport(result) {
     // Enable RTL
     sheet.views = [{ rightToLeft: true, showGridLines: true }];
 
-    // Column widths
+    // Column widths (6 columns now)
     sheet.columns = [
-      { key: 'col1', width: 34 },
-      { key: 'col2', width: 16 },
-      { key: 'col3', width: 28 },
-      { key: 'col4', width: 18 },
-      { key: 'col5', width: 32 }
+      { key: 'col1', width: 30 }, // Heir Name
+      { key: 'col2', width: 14 }, // Count
+      { key: 'col3', width: 22 }, // Individual Share (Fraction)
+      { key: 'col4', width: 22 }, // Individual Share (%)
+      { key: 'col5', width: 26 }, // Individual Value (د.م.)
+      { key: 'col6', width: 28 }  // Category Total Value (د.م.)
     ];
 
     const currencyFmt = '#,##0.00" د.م."';
@@ -54,7 +55,7 @@ export async function exportExcelReport(result) {
     };
 
     // 1. Header Title Banner (Matched to website header)
-    sheet.mergeCells('A1:E1');
+    sheet.mergeCells('A1:F1');
     const titleRow = sheet.getRow(1);
     titleRow.height = 42;
     const titleCell = titleRow.getCell(1);
@@ -72,7 +73,7 @@ export async function exportExcelReport(result) {
     sheet.addRow([]);
 
     // 2. Summary Table Section
-    sheet.mergeCells('A3:E3');
+    sheet.mergeCells('A3:F3');
     const summaryTitle = sheet.getRow(3).getCell(1);
     summaryTitle.value = 'ملخص حساب التركة والمال';
     summaryTitle.font = { size: 11, bold: true, color: { argb: colors.primaryText }, name: fontName };
@@ -129,19 +130,19 @@ export async function exportExcelReport(result) {
     // 3. Heirs Section Table
     sheet.addRow(['أنصبة الورثة المستحقين']);
     const heirsSecIdx = sheet.rowCount;
-    sheet.mergeCells(`A${heirsSecIdx}:E${heirsSecIdx}`);
+    sheet.mergeCells(`A${heirsSecIdx}:F${heirsSecIdx}`);
     const heirsTitleCell = sheet.getRow(heirsSecIdx).getCell(1);
     heirsTitleCell.font = { size: 11, bold: true, color: { argb: colors.primaryText }, name: fontName };
     heirsTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: colors.bannerBg };
     sheet.getRow(heirsSecIdx).height = 26;
 
-    sheet.addRow(['الوارث المستحق', 'عدد الأفراد', 'نصيب الفرد (الفرض/التعصيب)', 'النسبة المئوية', 'القيمة المالية المستحقة (د.م.)']);
+    sheet.addRow(['الوارث المستحق', 'عدد الأفراد', 'نصيب الفرد', 'نصيب الفرد مئوياً', 'نصيب الفرد (د.م.)', 'إجمالي الفئة (د.م.)']);
     const heirsHeaderRowIdx = sheet.rowCount;
     const heirsHeader = sheet.getRow(heirsHeaderRowIdx);
     heirsHeader.height = 24;
     heirsHeader.font = { bold: true, color: { argb: colors.primaryText }, name: fontName };
     heirsHeader.alignment = { horizontal: 'center', vertical: 'middle' };
-    for (let c = 1; c <= 5; c++) {
+    for (let c = 1; c <= 6; c++) {
       heirsHeader.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
       heirsHeader.getCell(c).border = thinBorder;
     }
@@ -149,10 +150,15 @@ export async function exportExcelReport(result) {
     // Common denominator calculations
     const heirsList = result.distributions.filter(d => !d.relationship.startsWith('WILL_'));
     const parsed = heirsList.filter(d => d.percentage > 0).map(d => {
-      const parts = d.share_fraction.split('/');
+      const parts = (d.individual_share_fraction || d.share_fraction).split('/');
       const num = parseInt(parts[0]) || 0;
       const den = parts[1] ? parseInt(parts[1]) : 1;
-      return { num, den, dist: d };
+
+      const classParts = d.share_fraction.split('/');
+      const classNum = parseInt(classParts[0]) || 0;
+      const classDen = classParts[1] ? parseInt(classParts[1]) : 1;
+
+      return { num, den, classNum, classDen, dist: d };
     });
 
     const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
@@ -161,31 +167,40 @@ export async function exportExcelReport(result) {
     let commonDen = 1;
     for (const p of parsed) {
       if (p.den > 0) commonDen = lcm(commonDen, p.den);
+      if (p.classDen > 0) commonDen = lcm(commonDen, p.classDen);
     }
 
     heirsList.forEach((d, idx) => {
       const isCalculated = d.percentage > 0;
+      let individualShareFractStr = d.individual_share_fraction || d.share_fraction;
       let shareFractStr = d.share_fraction;
+
       if (isCalculated) {
         const p = parsed.find(x => x.dist.relationship === d.relationship);
         if (p) {
           const scale = commonDen / p.den;
-          shareFractStr = `${p.num * scale}/${commonDen}`;
+          individualShareFractStr = `${p.num * scale}/${commonDen}`;
+
+          const classScale = commonDen / p.classDen;
+          shareFractStr = `${p.classNum * classScale}/${commonDen}`;
         }
       }
 
       const rowIdx = sheet.rowCount + 1;
+      const indPercentage = d.individual_percentage ?? d.percentage;
+
       const row = sheet.addRow([
         d.relationship_display,
         Number(d.count) || 0,
-        shareFractStr,
-        (Number(d.percentage) || 0) / 100,
-        // Heirs value is calculated from the estate before wills, which is Gross Estate B5 + Debts B6
-        { formula: `D${rowIdx}*(B$5+B$6)`, result: Number(d.total_value) || 0 }
+        individualShareFractStr,
+        (Number(indPercentage) || 0) / 100,
+        { formula: `D${rowIdx}*B$8`, result: Number(d.per_person_value) || 0 },
+        { formula: `B${rowIdx}*E${rowIdx}`, result: Number(d.total_value) || 0 }
       ]);
       row.height = 22;
       row.getCell(4).numFmt = '0.00%';
       row.getCell(5).numFmt = currencyFmt;
+      row.getCell(6).numFmt = currencyFmt;
 
       // Alignment
       row.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -193,8 +208,9 @@ export async function exportExcelReport(result) {
       row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
       row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
       row.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
+      row.getCell(6).alignment = { horizontal: 'left', vertical: 'middle' };
 
-      for (let c = 1; c <= 5; c++) {
+      for (let c = 1; c <= 6; c++) {
         const cell = row.getCell(c);
         cell.font = { name: fontName, size: 10, color: { argb: colors.textDark } };
         cell.border = thinBorder;
@@ -212,19 +228,19 @@ export async function exportExcelReport(result) {
       sheet.addRow([]);
       sheet.addRow(['الوصايا الشرعية المنفذة']);
       const willsTitleRowIdx = sheet.rowCount;
-      sheet.mergeCells(`A${willsTitleRowIdx}:E${willsTitleRowIdx}`);
+      sheet.mergeCells(`A${willsTitleRowIdx}:F${willsTitleRowIdx}`);
       const willsTitleCell = sheet.getRow(willsTitleRowIdx).getCell(1);
       willsTitleCell.font = { size: 11, bold: true, color: { argb: colors.primaryText }, name: fontName };
       willsTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: colors.bannerBg };
       sheet.getRow(willsTitleRowIdx).height = 26;
 
-      sheet.addRow(['الوصية المنفذة', '', 'النصيب المقتطع', 'النسبة المئوية', 'القيمة المالية للوصية (د.م.)']);
+      sheet.addRow(['الوصية المنفذة', '', 'نصيب الوصية', 'النسبة المئوية', 'نصيب الفرد (د.م.)', 'القيمة المالية للوصية (د.م.)']);
       const willsHeaderRowIdx = sheet.rowCount;
       const willsHeader = sheet.getRow(willsHeaderRowIdx);
       willsHeader.height = 24;
       willsHeader.font = { bold: true, color: { argb: colors.primaryText }, name: fontName };
       willsHeader.alignment = { horizontal: 'center', vertical: 'middle' };
-      for (let c = 1; c <= 5; c++) {
+      for (let c = 1; c <= 6; c++) {
         willsHeader.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
         willsHeader.getCell(c).border = thinBorder;
       }
@@ -236,19 +252,21 @@ export async function exportExcelReport(result) {
           '-',
           d.share_fraction,
           (Number(d.percentage) || 0) / 100,
+          '-',
           { formula: `D${rowIdx}*(B$5+B$6)`, result: Number(d.total_value) || 0 } // Gross Estate B5 + Debts B6
         ]);
         row.height = 22;
         row.getCell(4).numFmt = '0.00%';
-        row.getCell(5).numFmt = currencyFmt;
+        row.getCell(6).numFmt = currencyFmt;
 
         row.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
         row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
         row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
         row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
-        row.getCell(5).alignment = { horizontal: 'left', vertical: 'middle' };
+        row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(6).alignment = { horizontal: 'left', vertical: 'middle' };
 
-        for (let c = 1; c <= 5; c++) {
+        for (let c = 1; c <= 6; c++) {
           const cell = row.getCell(c);
           cell.font = { name: fontName, size: 10, color: { argb: colors.textDark } };
           cell.border = thinBorder;

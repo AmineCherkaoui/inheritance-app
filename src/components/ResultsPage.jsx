@@ -48,10 +48,15 @@ function getCommonDenominatorFractions(distributions) {
   if (active.length === 0) return [];
 
   const parsed = active.map(d => {
-    const parts = d.share_fraction.split('/');
+    const parts = (d.individual_share_fraction || d.share_fraction).split('/');
     const num = parseInt(parts[0]) || 0;
     const den = parts[1] ? parseInt(parts[1]) : 1;
-    return { num, den, dist: d };
+
+    const classParts = d.share_fraction.split('/');
+    const classNum = parseInt(classParts[0]) || 0;
+    const classDen = classParts[1] ? parseInt(classParts[1]) : 1;
+
+    return { num, den, classNum, classDen, dist: d };
   });
 
   const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
@@ -62,17 +67,25 @@ function getCommonDenominatorFractions(distributions) {
     if (p.den > 0) {
       commonDen = lcm(commonDen, p.den);
     }
+    if (p.classDen > 0) {
+      commonDen = lcm(commonDen, p.classDen);
+    }
   }
 
   return parsed.map(p => {
     if (p.num === 0) {
-      return { ...p.dist, share_fraction: '0' };
+      return { ...p.dist, individual_share_fraction: '0', share_fraction: '0' };
     }
     const scale = commonDen / p.den;
     const scaledNum = p.num * scale;
+
+    const classScale = commonDen / p.classDen;
+    const classScaledNum = p.classNum * classScale;
+
     return {
       ...p.dist,
-      share_fraction: `${scaledNum}/${commonDen}`
+      individual_share_fraction: `${scaledNum}/${commonDen}`,
+      share_fraction: `${classScaledNum}/${commonDen}`
     };
   });
 }
@@ -457,33 +470,40 @@ export default function ResultsPage() {
                     <th className="py-3.5 px-4 text-right">الوارث</th>
                     <th className="py-3.5 px-4 text-center">عدد الأفراد</th>
                     <th className="py-3.5 px-4 text-center">نصيب الفرد</th>
-                    <th className="py-3.5 px-4 text-center">النسبة المئوية</th>
-                    <th className="py-3.5 px-4 text-left">من المال</th>
+                    <th className="py-3.5 px-4 text-center">نصيب الفرد مئوياً</th>
+                    <th className="py-3.5 px-4 text-center">نصيب الفرد (مال)</th>
+                    <th className="py-3.5 px-4 text-left">إجمالي الفئة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-default-100">
-                  {heirsDistributions.map((dist, idx) => (
-                    <tr key={idx} className="hover:bg-default-50/40 transition-colors duration-150">
-                      <td className="py-3.5 px-4 text-right font-bold text-foreground">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                          <span>{dist.relationship_display}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-semibold text-muted-foreground font-mono">
-                        {dist.count}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-black text-amber-700 font-mono">
-                        {dist.share_fraction}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-bold text-foreground font-mono">
-                        %{dist.percentage.toFixed(2)}
-                      </td>
-                      <td className="py-3.5 px-4 text-left text-sm font-extrabold text-foreground font-mono">
-                        {formatCurrency(dist.total_value)}
-                      </td>
-                    </tr>
-                  ))}
+                  {heirsDistributions.map((dist, idx) => {
+                    const indPercentage = dist.individual_percentage ?? dist.percentage;
+                    return (
+                      <tr key={idx} className="hover:bg-default-50/40 transition-colors duration-150">
+                        <td className="py-3.5 px-4 text-right font-bold text-foreground">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                            <span>{dist.relationship_display}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-semibold text-muted-foreground font-mono">
+                          {dist.count}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-black text-amber-700 font-mono">
+                          {dist.individual_share_fraction || dist.share_fraction}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-bold text-foreground font-mono">
+                          %{indPercentage.toFixed(2)}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-bold text-amber-600 font-mono">
+                          {formatCurrency(dist.per_person_value)}
+                        </td>
+                        <td className="py-3.5 px-4 text-left text-sm font-extrabold text-foreground font-mono">
+                          {formatCurrency(dist.total_value)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -568,20 +588,65 @@ export default function ResultsPage() {
           )}
 
           {/* Table Card 4: Explanations section */}
-          <Card className="rounded-3xl border border-default-200 bg-white p-5 shadow-xs">
-            <span className="text-[14px] font-bold text-muted-foreground uppercase tracking-wider block mb-3">
-              تفاصيل وتوجيه الأنصبة والوصايا
+          <Card className="rounded-3xl border border-default-200 bg-white p-6 shadow-sm">
+            <span className="text-sm font-black flex items-center gap-2 mb-4 text-foreground">
+              <Award size={16} className="text-amber-600" /> تفاصيل وتوجيه الأنصبة والوصايا
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {allFormatted.map((dist, idx) => (
-                <div key={idx} className="bg-default-50/50 p-3.5 rounded-xl border border-default-100/50 flex gap-2.5 items-start">
-                  <Award size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block text-xs font-bold text-foreground mb-0.5">{dist.relationship_display}</span>
-                    <p className="text-[14px] text-muted-foreground leading-relaxed">{dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(result.distributions || []).map((dist, idx) => {
+                const isActive = dist.percentage > 0;
+                const isWill = dist.relationship.startsWith('WILL_');
+                const activeHeirIdx = heirsDistributions.findIndex(h => h.relationship === dist.relationship);
+                const circleColor = isWill 
+                  ? '#8b5cf6' 
+                  : (activeHeirIdx !== -1 ? COLORS[activeHeirIdx % COLORS.length] : '#f87171');
+
+                return (
+                  <div key={idx} className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between gap-3 ${
+                    isActive 
+                      ? 'bg-default-50/50 border-default-150/60 hover:border-amber-250 hover:bg-amber-50/5 shadow-2xs' 
+                      : 'bg-red-50/20 border-red-100 text-muted-foreground'
+                  }`}>
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: circleColor }} />
+                          <span className="text-xs sm:text-sm font-black text-foreground">{dist.relationship_display}</span>
+                          {dist.count !== '-' && dist.count > 1 && (
+                            <span className="text-[10px] text-muted-foreground">({dist.count} أفراد)</span>
+                          )}
+                        </div>
+                        {isActive ? (
+                          <span className="text-[10px] sm:text-xs font-black text-amber-800 font-mono bg-amber-50 border border-amber-200/50 px-2.5 py-0.5 rounded-md">
+                            {dist.share_fraction}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] sm:text-[10px] font-bold text-red-650 bg-red-100/50 border border-red-250/30 px-2 py-0.5 rounded-md">
+                            محجوب
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}
+                      </p>
+                    </div>
+
+                    {isActive && (
+                      <div className="flex items-center justify-between pt-2.5 border-t border-default-150/50 text-[10px] sm:text-[11px] font-semibold text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <span>النسبة:</span>
+                          <span className="font-extrabold text-foreground font-mono">%{dist.percentage.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span>القيمة:</span>
+                          <span className="font-extrabold text-amber-700 font-mono">{formatCurrency(dist.total_value)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>

@@ -1,4 +1,4 @@
-import Fraction from './fraction';
+import Fraction from './fraction.js';
 
 export const HEIR_NAMES_AR = {
     'HUSBAND': 'الزوج',
@@ -369,12 +369,25 @@ export class InheritanceCalculator {
             const hasMultipleSiblings = siblingCount > 1;
             const useOneSixth = hasChildren || hasMultipleSiblings;
 
-            const share = InheritanceCalculator.FIXED_SHARES['MOTHER'][useOneSixth ? 'with_children' : 'without_children'];
-            this.results['MOTHER'] = { share, count: 1 };
-            this.explanations['MOTHER'] = useOneSixth
-                ? `ترث الأم السدس (1/6) فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ])' : 'لوجود جمع من الإخوة للمتوفى (اثنان فأكثر من أي جهة كانوا، لقوله تعالى: [فَإِنْ كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ])'}.`
-                : `ترث الأم الثلث (1/3) فرضاً لعدم وجود فرع وارث للمتوفى وعدم وجود جمع من الإخوة، لقوله تعالى: [فَإِنْ لَمْ يَكُنْ لَهُ وَلَدٌ وَوَرِثَهُ أَبَوَاهُ فَلِأُمِّهِ الثُّلُثُ].`;
-            remaining = remaining.sub(share);
+            // Check for Umariyyah (Al-Umariyyatayn) case:
+            // Spouse + Mother + Father, no children/descendants, and less than 2 siblings.
+            const isUmariyyah = !hasChildren && siblingCount < 2 && this.heirs['FATHER'] && (this.heirs['HUSBAND'] || this.heirs['WIFE']);
+
+            if (isUmariyyah) {
+                const spouseKey = this.heirs['HUSBAND'] ? 'HUSBAND' : 'WIFE';
+                const spouseName = this.heirs[spouseKey].displayName;
+                const share = remaining.mul(new Fraction(1, 3));
+                this.results['MOTHER'] = { share, count: 1 };
+                this.explanations['MOTHER'] = `ترث الأم ثلث الباقي بعد نصيب ${spouseName} (المسألة العمرية / الغراوية) لعدم وجود فرع وارث ولانفراد الأب معها ومع أحد الزوجين، حيث قضى بذلك عمر بن الخطاب رضي الله عنه تطبيقاً لقاعدة (للذكر مثل حظ الأنثيين) بين الأبوين.`;
+                remaining = remaining.sub(share);
+            } else {
+                const share = InheritanceCalculator.FIXED_SHARES['MOTHER'][useOneSixth ? 'with_children' : 'without_children'];
+                this.results['MOTHER'] = { share, count: 1 };
+                this.explanations['MOTHER'] = useOneSixth
+                    ? `ترث الأم السدس (1/6) فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ])' : 'لوجود جمع من الإخوة للمتوفى (اثنان فأكثر من أي جهة كانوا، لقوله تعالى: [فَإِنْ كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ])'}.`
+                    : `ترث الأم الثلث (1/3) فرضاً لعدم وجود فرع وارث للمتوفى وعدم وجود جمع من الإخوة، لقوله تعالى: [فَإِنْ لَمْ يَكُنْ لَهُ وَلَدٌ وَوَرِثَهُ أَبَوَاهُ فَلِأُمِّهِ الثُّلُثُ].`;
+                remaining = remaining.sub(share);
+            }
         }
 
         // Daughter / Daughter of Son / Daughter of grandson
@@ -666,7 +679,18 @@ export class InheritanceCalculator {
         // 4. Father
         if (this.heirs['FATHER'] && !this.results['FATHER']) {
             this.results['FATHER'] = { share: remaining, count: 1 };
-            this.explanations['FATHER'] = `يرث الأب الباقي تعصيباً (عصبة بالنفس) لعدم وجود فرع وارث ذكر (بنين أو أولاد البنين)، للحديث الشريف: (ألحقوا الفرائض بأهلها، فما بقي فهو لأولى رجل ذكر).`;
+            
+            const siblingCount = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER']
+                .reduce((acc, key) => acc + (this.heirs[key] ? this.heirs[key].count : 0), 0);
+            const isUmariyyah = !this._has_children() && siblingCount < 2 && this.heirs['MOTHER'] && (this.heirs['HUSBAND'] || this.heirs['WIFE']);
+
+            if (isUmariyyah) {
+                const spouseKey = this.heirs['HUSBAND'] ? 'HUSBAND' : 'WIFE';
+                const spouseName = this.heirs[spouseKey].displayName;
+                this.explanations['FATHER'] = `يرث الأب الباقي بعد نصيب ${spouseName} والأم تعصيباً (المسألة العمرية / الغراوية) وهو ما يعادل ثلثي الباقي، ليكون له ضعف نصيب الأم تطبيقاً لقاعدة (للذكر مثل حظ الأنثيين) عند انفرادهما بالباقي بعد الزوجين.`;
+            } else {
+                this.explanations['FATHER'] = `يرث الأب الباقي تعصيباً (عصبة بالنفس) لعدم وجود فرع وارث ذكر (بنين أو أولاد البنين)، للحديث الشريف: (ألحقوا الفرائض بأهلها، فما بقي فهو لأولى رجل ذكر).`;
+            }
             return;
         } else if (this.results['FATHER'] && this.results['FATHER'].asabah) {
             this.results['FATHER'].share = this.results['FATHER'].share.add(remaining);
@@ -809,12 +833,15 @@ export class InheritanceCalculator {
                 whyText = whyText.replace(/المتوفى/g, 'المتوفاة');
             }
 
+            const individualShareFraction = count > 1 ? shareFraction.div(new Fraction(count)) : shareFraction;
             distributions.push({
                 relationship,
                 relationship_display: displayName,
                 count,
                 share_fraction: shareFraction.toString(),
+                individual_share_fraction: individualShareFraction.toString(),
                 percentage: Math.round(percentage * 10000) / 10000,
+                individual_percentage: count > 1 ? Math.round((percentage / count) * 10000) / 10000 : Math.round(percentage * 10000) / 10000,
                 total_value: Math.round(totalValue * 100) / 100,
                 per_person_value: Math.round(perPersonValue * 100) / 100,
                 why: whyText
@@ -826,12 +853,15 @@ export class InheritanceCalculator {
             for (const will of this.wills_executed) {
                 const pct = (will.executed_value / originalNet) * 100;
 
+                const willFractStr = will.executed_fraction_obj ? will.executed_fraction_obj.toString() : will.executed_fraction_share;
                 distributions.push({
                     relationship: `WILL_${will.name}`,
                     relationship_display: `${will.name || 'وصية'}`,
                     count: '-',
-                    share_fraction: will.executed_fraction_obj ? will.executed_fraction_obj.toString() : will.executed_fraction_share,
+                    share_fraction: willFractStr,
+                    individual_share_fraction: willFractStr,
                     percentage: Math.round(pct * 10000) / 10000,
+                    individual_percentage: Math.round(pct * 10000) / 10000,
                     total_value: Math.round(will.executed_value * 100) / 100,
                     per_person_value: Math.round(will.executed_value * 100) / 100,
                     why: `تنفيذ الوصية الشرعية (الكسر المطلوب: ${will.original_value})`
@@ -851,7 +881,9 @@ export class InheritanceCalculator {
                     relationship_display: heirObj.displayName,
                     count: heirObj.count,
                     share_fraction: "0",
+                    individual_share_fraction: "0",
                     percentage: 0,
+                    individual_percentage: 0,
                     total_value: 0,
                     per_person_value: 0,
                     why: whyText

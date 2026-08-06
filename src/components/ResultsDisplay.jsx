@@ -207,10 +207,15 @@ function getCommonDenominatorFractions(distributions) {
   if (active.length === 0) return [];
 
   const parsed = active.map(d => {
-    const parts = d.share_fraction.split('/');
+    const parts = (d.individual_share_fraction || d.share_fraction).split('/');
     const num = parseInt(parts[0]) || 0;
     const den = parts[1] ? parseInt(parts[1]) : 1;
-    return { num, den, dist: d };
+
+    const classParts = d.share_fraction.split('/');
+    const classNum = parseInt(classParts[0]) || 0;
+    const classDen = classParts[1] ? parseInt(classParts[1]) : 1;
+
+    return { num, den, classNum, classDen, dist: d };
   });
 
   const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
@@ -221,17 +226,25 @@ function getCommonDenominatorFractions(distributions) {
     if (p.den > 0) {
       commonDen = lcm(commonDen, p.den);
     }
+    if (p.classDen > 0) {
+      commonDen = lcm(commonDen, p.classDen);
+    }
   }
 
   return parsed.map(p => {
     if (p.num === 0) {
-      return { ...p.dist, share_fraction: '0' };
+      return { ...p.dist, individual_share_fraction: '0', share_fraction: '0' };
     }
     const scale = commonDen / p.den;
     const scaledNum = p.num * scale;
+
+    const classScale = commonDen / p.classDen;
+    const classScaledNum = p.classNum * classScale;
+
     return {
       ...p.dist,
-      share_fraction: `${scaledNum}/${commonDen}`
+      individual_share_fraction: `${scaledNum}/${commonDen}`,
+      share_fraction: `${classScaledNum}/${commonDen}`
     };
   });
 }
@@ -371,48 +384,76 @@ export default function ResultsDisplay({ result }) {
                     <th className="py-3.5 px-4 text-right">الوارث / المستفيد</th>
                     <th className="py-3.5 px-4 text-center">عدد الأفراد</th>
                     <th className="py-3.5 px-4 text-center">نصيب الفرد</th>
-                    <th className="py-3.5 px-4 text-center">النسبة المئوية</th>
-                    <th className="py-3.5 px-4 text-left">من المال</th>
+                    <th className="py-3.5 px-4 text-center">نصيب الفرد مئوياً</th>
+                    <th className="py-3.5 px-4 text-center">نصيب الفرد (مال)</th>
+                    <th className="py-3.5 px-4 text-left">إجمالي الفئة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-default-100">
-                  {heirsDistributions.map((dist, idx) => (
-                    <tr key={idx} className="hover:bg-default-50/40 transition-colors duration-150">
-                      <td className="py-3.5 px-4 text-right font-bold text-foreground">
-                        {dist.relationship_display}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-semibold text-muted-foreground font-mono">
-                        {dist.count}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-black text-amber-700 font-mono">
-                        {dist.share_fraction}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-sm font-bold text-foreground font-mono">
-                        %{dist.percentage.toFixed(2)}
-                      </td>
-                      <td className="py-3.5 px-4 text-left text-sm font-extrabold text-foreground font-mono">
-                        {formatCurrency(dist.total_value)} د.م.
-                      </td>
-                    </tr>
-                  ))}
+                  {heirsDistributions.map((dist, idx) => {
+                    const indPercentage = dist.individual_percentage ?? dist.percentage;
+                    return (
+                      <tr key={idx} className="hover:bg-default-50/40 transition-colors duration-150">
+                        <td className="py-3.5 px-4 text-right font-bold text-foreground">
+                          {dist.relationship_display}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-semibold text-muted-foreground font-mono">
+                          {dist.count}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-black text-amber-700 font-mono">
+                          {dist.individual_share_fraction || dist.share_fraction}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-bold text-foreground font-mono">
+                          %{indPercentage.toFixed(2)}
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-sm font-bold text-amber-600 font-mono">
+                          {formatCurrency(dist.per_person_value)} د.م.
+                        </td>
+                        <td className="py-3.5 px-4 text-left text-sm font-extrabold text-foreground font-mono">
+                          {formatCurrency(dist.total_value)} د.م.
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Explanations section */}
-            <div className="space-y-2 pt-2 border-t border-default-100">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">
+            <div className="space-y-3 pt-3 border-t border-default-100">
+              <span className="text-[11px] font-black text-muted-foreground uppercase tracking-wider block mb-1">
                 تفاصيل وتوجيه الأنصبة
               </span>
-              {heirsDistributions.map((dist, idx) => (
-                <div key={idx} className="bg-default-50/50 p-3 rounded-xl border border-default-100/50 flex gap-2.5 items-start">
-                  <Award size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block text-xs font-bold text-foreground mb-0.5">{dist.relationship_display}</span>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {heirsDistributions.map((dist, idx) => (
+                  <div key={idx} className="p-3.5 rounded-xl border border-default-150/60 bg-default-50/30 flex flex-col justify-between gap-2.5 hover:border-amber-250 transition-colors duration-150">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <span className="text-xs font-bold text-foreground">{dist.relationship_display}</span>
+                        </div>
+                        <span className="text-[9px] font-bold text-amber-800 font-mono bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md">
+                          {dist.share_fraction}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-default-100 text-[10px] font-semibold text-muted-foreground">
+                      <div>
+                        <span>النسبة: </span>
+                        <span className="font-extrabold text-foreground font-mono">%{dist.percentage.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span>القيمة: </span>
+                        <span className="font-extrabold text-amber-700 font-mono">{formatCurrency(dist.total_value)} د.م.</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Blocked heirs */}

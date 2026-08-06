@@ -17,10 +17,15 @@ function getCommonDenominatorFractions(distributions) {
   if (active.length === 0) return [];
 
   const parsed = active.map(d => {
-    const parts = d.share_fraction.split('/');
+    const parts = (d.individual_share_fraction || d.share_fraction).split('/');
     const num = parseInt(parts[0]) || 0;
     const den = parts[1] ? parseInt(parts[1]) : 1;
-    return { num, den, dist: d };
+
+    const classParts = d.share_fraction.split('/');
+    const classNum = parseInt(classParts[0]) || 0;
+    const classDen = classParts[1] ? parseInt(classParts[1]) : 1;
+
+    return { num, den, classNum, classDen, dist: d };
   });
 
   const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
@@ -31,17 +36,25 @@ function getCommonDenominatorFractions(distributions) {
     if (p.den > 0) {
       commonDen = lcm(commonDen, p.den);
     }
+    if (p.classDen > 0) {
+      commonDen = lcm(commonDen, p.classDen);
+    }
   }
 
   return parsed.map(p => {
     if (p.num === 0) {
-      return { ...p.dist, formatted_fraction: '0' };
+      return { ...p.dist, formatted_individual_fraction: '0', formatted_fraction: '0' };
     }
     const scale = commonDen / p.den;
     const scaledNum = p.num * scale;
+
+    const classScale = commonDen / p.classDen;
+    const classScaledNum = p.classNum * classScale;
+
     return {
       ...p.dist,
-      formatted_fraction: `${scaledNum}/${commonDen}`
+      formatted_individual_fraction: `${scaledNum}/${commonDen}`,
+      formatted_fraction: `${classScaledNum}/${commonDen}`
     };
   });
 }
@@ -163,11 +176,12 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     textAlign: 'center'
   },
-  colHeir: { width: '30%', textAlign: 'right' },
-  colCount: { width: '15%' },
-  colFraction: { width: '15%' },
-  colPercent: { width: '20%' },
-  colValue: { width: '20%', textAlign: 'left' },
+  colHeir: { width: '25%', textAlign: 'right' },
+  colCount: { width: '10%' },
+  colFraction: { width: '13%' },
+  colPercent: { width: '15%' },
+  colIndValue: { width: '18%', textAlign: 'left' },
+  colTotalValue: { width: '19%', textAlign: 'left' },
 
   explanationCard: {
     backgroundColor: '#fafaf9',
@@ -210,7 +224,7 @@ const styles = StyleSheet.create({
 });
 
 function formatCurrency(val) {
-  return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MAD';
+  return Number(val).toLocaleString('ar-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.م.';
 }
 
 export default function PdfReport({ result }) {
@@ -274,19 +288,24 @@ export default function PdfReport({ result }) {
               <Text style={[styles.tableHeaderCell, styles.colHeir]}>الوارث</Text>
               <Text style={[styles.tableHeaderCell, styles.colCount]}>عدد الأفراد</Text>
               <Text style={[styles.tableHeaderCell, styles.colFraction]}>نصيب الفرد</Text>
-              <Text style={[styles.tableHeaderCell, styles.colPercent]}>النسبة المئوية</Text>
-              <Text style={[styles.tableHeaderCell, styles.colValue]}>من المال</Text>
+              <Text style={[styles.tableHeaderCell, styles.colPercent]}>نصيب الفرد مئوياً</Text>
+              <Text style={[styles.tableHeaderCell, styles.colIndValue]}>نصيب الفرد (مال)</Text>
+              <Text style={[styles.tableHeaderCell, styles.colTotalValue]}>إجمالي الفئة</Text>
             </View>
 
-            {heirsDistributions.map((heir, idx) => (
-              <View key={idx} style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.colHeir]}>{heir.relationship_display}</Text>
-                <Text style={[styles.tableCell, styles.colCount]}>{heir.count}</Text>
-                <Text style={[styles.tableCell, styles.colFraction]}>{heir.formatted_fraction}</Text>
-                <Text style={[styles.tableCell, styles.colPercent]}>%{heir.percentage.toFixed(2)}</Text>
-                <Text style={[styles.tableCell, styles.colValue]}>{formatCurrency(heir.total_value)}</Text>
-              </View>
-            ))}
+            {heirsDistributions.map((heir, idx) => {
+              const indPercentage = heir.individual_percentage ?? heir.percentage;
+              return (
+                <View key={idx} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.colHeir]}>{heir.relationship_display}</Text>
+                  <Text style={[styles.tableCell, styles.colCount]}>{heir.count}</Text>
+                  <Text style={[styles.tableCell, styles.colFraction]}>{heir.formatted_individual_fraction || heir.formatted_fraction}</Text>
+                  <Text style={[styles.tableCell, styles.colPercent]}>%{indPercentage.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.colIndValue]}>{formatCurrency(heir.per_person_value)}</Text>
+                  <Text style={[styles.tableCell, styles.colTotalValue]}>{formatCurrency(heir.total_value)}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 
