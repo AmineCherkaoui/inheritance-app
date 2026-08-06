@@ -6,6 +6,7 @@ import WillsForm from './components/WillsForm';
 import HeirSelector from './components/HeirSelector';
 import ResultsDisplay from './components/ResultsDisplay';
 import ResultsPage from './components/ResultsPage';
+import CalculatorPageV2 from './components/CalculatorPageV2';
 import { Button } from '@heroui/react';
 import { motion } from 'motion/react';
 import { Scale, RotateCcw, Calculator, Share2 } from 'lucide-react';
@@ -519,6 +520,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<CalculatorPage />} />
+        <Route path="/v2" element={<CalculatorPageV2 />} />
         <Route path="/results" element={<ResultsPage />} />
       </Routes>
     </BrowserRouter>
