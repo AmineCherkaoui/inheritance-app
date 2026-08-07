@@ -1,5 +1,5 @@
 import Fraction from '../fraction.js';
-import { hasDescendants, hasMaleDescendants, hasFemaleDescendants, hasMultipleSiblings } from './Helpers.js';
+import { hasDescendants, hasMaleDescendants, hasFemaleDescendants } from './Helpers.js';
 
 export function calculateFixedShares(heirs, results, explanations, remaining) {
     const hasChildren = hasDescendants(heirs);

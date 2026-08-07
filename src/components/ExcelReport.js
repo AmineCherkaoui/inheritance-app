@@ -170,19 +170,15 @@ export async function exportExcelReport(result) {
       if (p.classDen > 0) commonDen = lcm(commonDen, p.classDen);
     }
 
-    heirsList.forEach((d, idx) => {
+    heirsList.forEach((d) => {
       const isCalculated = d.percentage > 0;
       let individualShareFractStr = d.individual_share_fraction || d.share_fraction;
-      let shareFractStr = d.share_fraction;
 
       if (isCalculated) {
         const p = parsed.find(x => x.dist.relationship === d.relationship);
         if (p) {
           const scale = commonDen / p.den;
           individualShareFractStr = `${p.num * scale}/${commonDen}`;
-
-          const classScale = commonDen / p.classDen;
-          shareFractStr = `${p.classNum * classScale}/${commonDen}`;
         }
       }
 
@@ -245,7 +241,7 @@ export async function exportExcelReport(result) {
         willsHeader.getCell(c).border = thinBorder;
       }
 
-      willsList.forEach((d, idx) => {
+      willsList.forEach((d) => {
         const rowIdx = sheet.rowCount + 1;
         const row = sheet.addRow([
           d.relationship_display,

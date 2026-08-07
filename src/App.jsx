@@ -4,13 +4,12 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router';
 import EstateForm from './components/EstateForm';
 import WillsForm from './components/WillsForm';
 import HeirSelector from './components/HeirSelector';
-import ResultsDisplay from './components/ResultsDisplay';
 import ResultsPage from './components/ResultsPage';
 import CalculatorPageV2 from './components/CalculatorPageV2';
 import { Button } from '@heroui/react';
 import { motion } from 'motion/react';
-import { Scale, RotateCcw, Calculator, Share2 } from 'lucide-react';
-import { serializeState, deserializeState } from './utils';
+import { Scale, RotateCcw, Calculator } from 'lucide-react';
+import { deserializeState } from './utils';
 
 
 const HEIR_CATEGORIES = {
@@ -199,9 +198,7 @@ export function CalculatorPage() {
   const [heirs, setHeirs] = useState({});
   const [wills, setWills] = useState([]);
   const [heirsApprovedExcess, setHeirsApprovedExcess] = useState(false);
-  const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -225,51 +222,9 @@ export function CalculatorPage() {
         }
         if (state.heirsApprovedExcess !== undefined) setHeirsApprovedExcess(state.heirsApprovedExcess);
 
-        const heirsList = Object.entries(state.heirs || {}).map(([relationship, count]) => ({
-          relationship,
-          count
-        }));
-        if (heirsList.length > 0) {
-          const caseData = {
-            id: Date.now(),
-            name: state.deceasedName || (state.deceasedGender === 'male' ? 'المتوفى' : 'المتوفاة'),
-            gender: state.deceasedGender,
-            total_estate_value: parseFloat(state.totalEstate) || 0,
-            funeral_expenses: 0,
-            debts: parseFloat(state.debts) || 0,
-            heirs: heirsList,
-            wills: state.wills || [],
-            heirsApprovedExcess: state.heirsApprovedExcess || false
-          };
-          const calculator = new InheritanceCalculator(caseData);
-          const output = calculator.calculate();
-          setResult(output);
-        }
       }
     }
   }, []);
-
-  const getShareableUrl = () => {
-    const state = {
-      deceasedName,
-      deceasedGender,
-      totalEstate,
-      debts,
-      heirs,
-      wills,
-      heirsApprovedExcess
-    };
-    const code = serializeState(state);
-    return `${window.location.origin}/results?s=${code}`;
-  };
-
-  const copyShareLink = () => {
-    const url = getShareableUrl();
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
 
 
   const handleGenderChange = (gender) => {
@@ -283,7 +238,6 @@ export function CalculatorPage() {
       }
       return updated;
     });
-    setResult(null);
   };
 
   const updateHeir = (key, val) => {
@@ -416,15 +370,13 @@ export function CalculatorPage() {
 
     const calculator = new InheritanceCalculator(caseData);
     const output = calculator.calculate();
-    setResult(output);
-    navigate('/results', { state: { result: output } });
+    navigate('/results', { state: { result: output, from: '/' } });
   };
 
   const resetAll = () => {
     setHeirs({});
     setWills([]);
     setHeirsApprovedExcess(false);
-    setResult(null);
     setDeceasedGender('male');
     setDeceasedName('');
     setTotalEstate();

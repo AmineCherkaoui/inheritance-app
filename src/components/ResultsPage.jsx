@@ -1,28 +1,24 @@
 import React, { useState } from 'react';
 import { Card, Separator, Button } from '@heroui/react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router';
 import {
   Scale, ShieldAlert, Award, FileText, CheckCircle,
-  TrendingDown, TrendingUp, Coins, Users, Minus,
-  ScrollText, AlertTriangle, User, Banknote, ArrowRight, PieChart as PieIcon, BarChart3, Share2, Download
+  TrendingDown, TrendingUp, Users, Minus,
+  ScrollText, AlertTriangle, Banknote, ArrowRight, PieChart as PieIcon, BarChart3, Share2
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { deserializeState } from '../utils';
+import { serializeState, deserializeState, renderExplanationWithQuranFont } from '../utils';
 import { InheritanceCalculator } from '../engine';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from './PdfReport';
 import { exportExcelReport } from './ExcelReport';
-import { renderExplanationWithQuranFont } from './ResultsDisplay';
 
 function formatCurrency(value) {
   return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' د.م.';
 }
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 15, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }
-};
+
 
 function BreakdownStep({ icon: Icon, iconColor, label, value, valueColor = 'text-foreground', operation, highlight }) {
   return (
@@ -132,10 +128,11 @@ export default function ResultsPage() {
   const handleBack = () => {
     const params = new URLSearchParams(window.location.search);
     const sharedStateStr = params.get('s');
+    const fromPath = location.state?.from || '/';
     if (sharedStateStr) {
-      navigate(`/?s=${sharedStateStr}`);
+      navigate(`${fromPath}?s=${sharedStateStr}`);
     } else {
-      navigate('/');
+      navigate(fromPath);
     }
   };
 
@@ -167,7 +164,7 @@ export default function ResultsPage() {
       wills,
       heirsApprovedExcess: !result.is_wills_scaled
     };
-    const code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    const code = serializeState(state);
     return `${window.location.origin}/results?s=${code}`;
   };
 
@@ -177,7 +174,7 @@ export default function ResultsPage() {
       navigator.clipboard.writeText(url).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      }).catch(err => {
+      }).catch(() => {
         fallbackCopyShareLink(url);
       });
     } else {
@@ -285,6 +282,7 @@ export default function ResultsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="container mx-auto mb-8 flex items-center gap-4 bg-white/90 p-4 rounded-3xl border border-default-150/40 backdrop-blur-xs"
       >
+      {location.state?.from && (
         <Button
           variant="outline"
           isIconOnly
@@ -294,6 +292,7 @@ export default function ResultsPage() {
         >
           <ArrowRight size={18} />
         </Button>
+      )}
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
             <Scale size={22} className="text-amber-600" /> تفاصيل توزيع التركة

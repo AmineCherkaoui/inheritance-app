@@ -1,4 +1,4 @@
-import { hasDescendants, hasMaleDescendants, hasFemaleDescendants, hasSon, hasGrandson, hasFather, hasGrandfather } from './Helpers.js';
+import { hasMaleDescendants, hasFemaleDescendants, hasFather, hasGrandfather } from './Helpers.js';
 
 export function applyBlockingRules(heirs, explanations) {
     // Helper function to block an heir
@@ -12,7 +12,6 @@ export function applyBlockingRules(heirs, explanations) {
 
     // 1. Mother blocks all grandmothers
     if (heirs['MOTHER'] && !heirs['MOTHER'].is_blocked) {
-        const blockerName = heirs['MOTHER'].displayName;
         const reason = `الجدة محجوبة حجب حرمان لوجود الأم.`;
         ['PATERNAL_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', 'MATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_PATERNAL_GREAT_GRANDMOTHER']
             .forEach(gm => block(gm, 'MOTHER', reason));
@@ -20,7 +19,6 @@ export function applyBlockingRules(heirs, explanations) {
 
     // 2. Father blocks grandfathers & paternal grandmothers
     if (heirs['FATHER'] && !heirs['FATHER'].is_blocked) {
-        const blockerName = heirs['FATHER'].displayName;
         block('PATERNAL_GRANDFATHER', 'FATHER', `الجد محجوب لوجود الأب.`);
         block('PATERNAL_GREAT_GRANDFATHER', 'FATHER', `الجد محجوب لوجود الأب.`);
         

@@ -4,10 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router';
 import {
   Scale, RotateCcw, Calculator, ArrowRight, ArrowLeft,
-  User, Wallet, ShieldAlert, Check, UserPlus, Plus, Minus,
-  Users, ScrollText, CheckCircle, AlertTriangle, UserCheck, UserX
+  User, Wallet, ShieldAlert, Check, Plus, Minus, UserCheck, UserX
 } from 'lucide-react';
-import { serializeState, deserializeState } from '../utils';
+import { deserializeState } from '../utils';
 import { InheritanceCalculator } from '../engine';
 import WillsForm from './WillsForm';
 
@@ -218,6 +217,30 @@ export default function CalculatorPageV2() {
   const [errors, setErrors] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedStateStr = params.get('s');
+    if (sharedStateStr) {
+      const state = deserializeState(sharedStateStr);
+      if (state) {
+        if (state.deceasedName !== undefined) setDeceasedName(state.deceasedName);
+        if (state.deceasedGender !== undefined) setDeceasedGender(state.deceasedGender);
+        if (state.totalEstate !== undefined) setTotalEstate(state.totalEstate);
+        if (state.debts !== undefined) setDebts(state.debts);
+        if (state.heirs !== undefined) setHeirs(state.heirs);
+        if (state.wills !== undefined) {
+          setWills(state.wills.map((w, idx) => ({
+            id: w.id || `will-${Date.now()}-${idx}-${Math.random()}`,
+            name: w.name || '',
+            value: w.value || '',
+            valueType: w.valueType || 'fraction'
+          })));
+        }
+        if (state.heirsApprovedExcess !== undefined) setHeirsApprovedExcess(state.heirsApprovedExcess);
+      }
+    }
+  }, []);
+
   // Auto clean up blocked heirs
   const cleanHeirs = (updatedHeirs) => {
     let changed = false;
@@ -384,7 +407,7 @@ export default function CalculatorPageV2() {
 
     const calculator = new InheritanceCalculator(caseData);
     const output = calculator.calculate();
-    navigate('/results', { state: { result: output } });
+    navigate('/results', { state: { result: output, from: '/v2' } });
   };
 
   const resetAll = () => {
@@ -400,8 +423,7 @@ export default function CalculatorPageV2() {
     setCurrentStepIndex(0);
   };
 
-  // Progress percentage
-  const progressPercent = ((currentStepIndex + 1) / activeSteps.length) * 105; // Note: adjusted slightly
+
 
   const isNextDisabled = (() => {
     if (currentStep.key === 'estate_debts') {

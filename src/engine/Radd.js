@@ -1,6 +1,6 @@
 import Fraction from '../fraction.js';
 
-export function checkAndApplyRadd(results, explanations, heirs) {
+export function checkAndApplyRadd(results, explanations, _heirs) {
     // Radd is only applicable if the sum of all assigned shares is less than 1,
     // and there is no residuary heir (Asabah) who has taken the remainder.
     // Let's first check if any residuary heir took any residue.

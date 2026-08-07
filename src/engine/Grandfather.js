@@ -70,7 +70,6 @@ export function calculateGrandfatherWithSiblings(heirs, results, explanations, r
 
     // Distribute to siblings using Maliki rule (Mu'adah)
     if (siblingShare.greaterThan(0)) {
-        const totalSiblingsCount = FB + FS + PB + PS;
         if (FB > 0 || FS > 0) {
             // Full siblings present (they count paternal siblings but block/restrict them)
             if (FB > 0) {

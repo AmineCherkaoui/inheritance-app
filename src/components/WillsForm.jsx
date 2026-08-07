@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Input, Select, ListBox, Checkbox } from '@heroui/react';
+import { Card, Button, Input, Select, ListBox } from '@heroui/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ScrollText, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
