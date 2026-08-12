@@ -1,7 +1,7 @@
 import React from 'react';
 import { Accordion, Card, Button } from '@heroui/react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, ChevronDown, Check, UserPlus, Plus, Minus } from 'lucide-react';
+import { Users, ChevronDown, Check, UserPlus, Plus, Minus, AlertCircle } from 'lucide-react';
 
 export default function HeirSelector({
   heirCategories,
@@ -9,7 +9,8 @@ export default function HeirSelector({
   updateHeir,
   isCategoryBlocked,
   isHeirBlocked,
-  deceasedGender
+  deceasedGender,
+  hasMandatoryBequest
 }) {
   return (
     <motion.div
@@ -28,7 +29,8 @@ export default function HeirSelector({
         className="w-full rounded-3xl overflow-hidden shadow-none border border-border bg-white p-2.5 flex flex-col gap-2.5"
       >
         {Object.entries(heirCategories).map(([catKey, cat]) => {
-          if (isCategoryBlocked(catKey, heirs)) return null;
+          const isDescendantsAndMandatory = catKey === 'descendants' && hasMandatoryBequest;
+          if (isCategoryBlocked(catKey, heirs) && !isDescendantsAndMandatory) return null;
 
           let filteredList = cat.list;
           if (catKey === 'primary') {
@@ -39,7 +41,9 @@ export default function HeirSelector({
             }
           }
 
-          const visibleHeirs = filteredList.filter(h => !isHeirBlocked(h.key, heirs));
+          const visibleHeirs = isDescendantsAndMandatory
+            ? filteredList
+            : filteredList.filter(h => !isHeirBlocked(h.key, heirs));
           if (visibleHeirs.length === 0) return null;
 
           const selectedCount = visibleHeirs.filter(h => heirs[h.key] > 0).length;
@@ -50,7 +54,11 @@ export default function HeirSelector({
                 <Accordion.Trigger className="font-semibold">
                   <span className="flex items-center gap-2 text-sm">
                     {cat.title}
-                    {selectedCount > 0 && (
+                    {isDescendantsAndMandatory ? (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-900 text-[10px] font-bold">
+                        مُعطّل (وصية واجبة)
+                      </span>
+                    ) : selectedCount > 0 && (
                       <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">
                         {selectedCount}
                       </span>
@@ -63,7 +71,16 @@ export default function HeirSelector({
               </Accordion.Heading>
 
               <Accordion.Panel>
-                <Accordion.Body className="pt-3 pb-4 px-3.5">
+                <Accordion.Body className="pt-3 pb-4 px-3.5 space-y-3">
+                  {isDescendantsAndMandatory && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50/80 border border-amber-200 text-amber-900 rounded-xl text-xs leading-relaxed font-semibold">
+                      <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        تم تفعيل خيار <strong>«الوصية الواجبة»</strong>. لا يمكن إضافة الأحفاد هنا مباشرة، بل يتم تحديد أولاد الابن أو البنت المتوفين وتفاصيلهم في نموذج الوصية الواجبة بالأسفل.
+                      </div>
+                    </div>
+                  )}
+
                   <motion.div
                     layout
                     className="grid grid-cols-1 sm:grid-cols-2 gap-2.5"
@@ -72,9 +89,11 @@ export default function HeirSelector({
                       {visibleHeirs.map(heir => {
                         const currentVal = heirs[heir.key] || 0;
                         const isActive = currentVal > 0;
+                        const isCardDisabled = isDescendantsAndMandatory;
 
                         // Click handler for card click
                         const handleCardClick = () => {
+                          if (isCardDisabled) return;
                           if (heir.type === 'select') {
                             updateHeir(heir.key, isActive ? 0 : 1);
                           } else {
@@ -94,16 +113,24 @@ export default function HeirSelector({
                           >
                             <Card
                               variant={isActive ? 'secondary' : 'default'}
-                              className={`flex flex-row items-center justify-between rounded-xl transition-all duration-200 cursor-pointer select-none p-3.5 shadow-none border ${isActive ? 'border-amber-300 ring-1 ring-amber-300 bg-amber-50/15' : 'border-default-200 hover:border-amber-300'
+                              className={`flex flex-row items-center justify-between rounded-xl transition-all duration-200 select-none p-3.5 shadow-none border ${isCardDisabled
+                                  ? 'opacity-40 cursor-not-allowed bg-default-50 border-default-200'
+                                  : isActive
+                                    ? 'border-amber-300 ring-1 ring-amber-300 bg-amber-50/15 cursor-pointer'
+                                    : 'border-default-200 hover:border-amber-300 cursor-pointer'
                                 }`}
                               onClick={handleCardClick}
                             >
-                              <span className={`text-xs font-bold ${isActive ? 'text-amber-900' : 'text-foreground'}`}>
+                              <span className={`text-xs font-bold ${isCardDisabled ? 'text-muted-foreground' : isActive ? 'text-amber-900' : 'text-foreground'}`}>
                                 {heir.label}
                               </span>
 
                               <div className="flex items-center gap-1.5">
-                                {heir.type === 'select' ? (
+                                {isCardDisabled ? (
+                                  <span className="text-[10px] font-bold text-muted-foreground bg-default-100 px-2 py-0.5 rounded-md">
+                                    وصية واجبة
+                                  </span>
+                                ) : heir.type === 'select' ? (
                                   <div className="flex items-center">
                                     {isActive ? (
                                       <span className="flex items-center gap-1 text-[11px] font-black text-amber-700 bg-amber-100/60 px-2.5 py-1 rounded-lg border border-amber-200/50">

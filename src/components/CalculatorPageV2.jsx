@@ -6,9 +6,10 @@ import {
   Scale, RotateCcw, Calculator, ArrowRight, ArrowLeft,
   User, Wallet, ShieldAlert, Check, Plus, Minus, UserCheck, UserX
 } from 'lucide-react';
-import { deserializeState } from '../utils';
+import { serializeState, deserializeState } from '../utils';
 import { InheritanceCalculator } from '../engine';
 import WillsForm from './WillsForm';
+import MandatoryBequestForm from './MandatoryBequestForm';
 
 const HEIR_CATEGORIES = {
   descendants: {
@@ -214,8 +215,26 @@ export default function CalculatorPageV2() {
   const [heirs, setHeirs] = useState({});
   const [wills, setWills] = useState([]);
   const [heirsApprovedExcess, setHeirsApprovedExcess] = useState(false);
+  const [hasMandatoryBequest, setHasMandatoryBequest] = useState(false);
+  const [mandatoryBequests, setMandatoryBequests] = useState([]);
   const [errors, setErrors] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
+
+  const hasActiveDescendants = ['GRANDSON', 'GRANDDAUGHTER', 'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER'].some(key => heirs[key] > 0);
+
+  const handleSetHasMandatoryBequest = (val) => {
+    setHasMandatoryBequest(val);
+    if (val) {
+      setHeirs(prev => {
+        const updated = { ...prev };
+        delete updated['GRANDSON'];
+        delete updated['GRANDDAUGHTER'];
+        delete updated['GREAT_GRANDSON'];
+        delete updated['GREAT_GRANDDAUGHTER'];
+        return updated;
+      });
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -237,6 +256,10 @@ export default function CalculatorPageV2() {
           })));
         }
         if (state.heirsApprovedExcess !== undefined) setHeirsApprovedExcess(state.heirsApprovedExcess);
+        if (state.mandatoryBequests !== undefined) {
+          setMandatoryBequests(state.mandatoryBequests);
+          setHasMandatoryBequest(state.mandatoryBequests.length > 0);
+        }
       }
     }
   }, []);
@@ -258,11 +281,18 @@ export default function CalculatorPageV2() {
         delete clean[key];
         changed = true;
       }
+      if (hasMandatoryBequest && ['GRANDSON', 'GRANDDAUGHTER', 'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER'].includes(key)) {
+        delete clean[key];
+        changed = true;
+      }
     }
     return { clean, changed };
   };
 
   const updateHeir = (key, val) => {
+    if (hasMandatoryBequest && ['GRANDSON', 'GRANDDAUGHTER', 'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER'].includes(key)) {
+      return;
+    }
     setHeirs(prev => {
       const updated = { ...prev };
       if (val <= 0 && val !== -1) {
@@ -339,6 +369,9 @@ export default function CalculatorPageV2() {
     if (step.key === 'deceased_info' || step.key === 'estate_debts' || step.key === 'wills') {
       return true;
     }
+    if (step.key === 'descendants' && hasMandatoryBequest) {
+      return false;
+    }
     return !isStepBlocked(step.key, heirs, deceasedGender);
   });
 
@@ -387,12 +420,11 @@ export default function CalculatorPageV2() {
         count
       }));
 
-    if (heirsList.length === 0) {
+    if (heirsList.length === 0 && (!hasMandatoryBequest || mandatoryBequests.length === 0)) {
       setErrorMessage('الرجاء إضافة وارث واحد على الأقل للمسألة في الخطوات التالية.');
       return;
     }
 
-    setErrorMessage('');
     const caseData = {
       id: Date.now(),
       name: deceasedName || (deceasedGender === 'male' ? 'المتوفى' : 'المتوفاة'),
@@ -402,18 +434,32 @@ export default function CalculatorPageV2() {
       debts: parseFloat(debts) || 0,
       heirs: heirsList,
       wills: wills,
-      heirsApprovedExcess: heirsApprovedExcess
+      heirsApprovedExcess: heirsApprovedExcess,
+      mandatoryBequests: hasMandatoryBequest ? mandatoryBequests : []
     };
 
     const calculator = new InheritanceCalculator(caseData);
     const output = calculator.calculate();
-    navigate('/results', { state: { result: output, from: '/v2' } });
+    const serializeStateObj = {
+      deceasedName,
+      deceasedGender,
+      totalEstate,
+      debts,
+      heirs,
+      wills,
+      heirsApprovedExcess,
+      mandatoryBequests: hasMandatoryBequest ? mandatoryBequests : []
+    };
+    const sharedStateStr = serializeState(serializeStateObj);
+    navigate(`/results?s=${sharedStateStr}`, { state: { result: output, from: '/v2' } });
   };
 
   const resetAll = () => {
     setHeirs({});
     setWills([]);
     setHeirsApprovedExcess(false);
+    setHasMandatoryBequest(false);
+    setMandatoryBequests([]);
     setDeceasedGender('male');
     setDeceasedName('');
     setTotalEstate(undefined);
@@ -487,8 +533,8 @@ export default function CalculatorPageV2() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleGenderChange('male')}
                         className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${deceasedGender === 'male'
-                            ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
-                            : 'border-default-200 hover:border-amber-300'
+                          ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
+                          : 'border-default-200 hover:border-amber-300'
                           }`}
                       >
                         <User size={36} className={deceasedGender === 'male' ? 'text-amber-600' : 'text-muted-foreground'} />
@@ -500,8 +546,8 @@ export default function CalculatorPageV2() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleGenderChange('female')}
                         className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${deceasedGender === 'female'
-                            ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
-                            : 'border-default-200 hover:border-amber-300'
+                          ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
+                          : 'border-default-200 hover:border-amber-300'
                           }`}
                       >
                         <User size={36} className={deceasedGender === 'female' ? 'text-amber-600' : 'text-muted-foreground'} />
@@ -560,17 +606,28 @@ export default function CalculatorPageV2() {
                 )}
 
                 {currentStep.key === 'wills' && (
-                  <div className="shadow-xl shadow-amber-900/2 rounded-3xl overflow-hidden border border-default-200">
-                    <WillsForm
-                      wills={wills}
-                      addWill={addWill}
-                      updateWill={updateWill}
-                      removeWill={removeWill}
-                      heirsApprovedExcess={heirsApprovedExcess}
-                      setHeirsApprovedExcess={setHeirsApprovedExcess}
-                      checkWillsExceedThird={checkWillsExceedThird}
-                      errors={errors}
-                    />
+                  <div className="flex flex-col gap-6">
+                    <div className="shadow-xl shadow-amber-900/2 rounded-3xl overflow-hidden border border-default-200">
+                      <WillsForm
+                        wills={wills}
+                        addWill={addWill}
+                        updateWill={updateWill}
+                        removeWill={removeWill}
+                        heirsApprovedExcess={heirsApprovedExcess}
+                        setHeirsApprovedExcess={setHeirsApprovedExcess}
+                        checkWillsExceedThird={checkWillsExceedThird}
+                        errors={errors}
+                      />
+                    </div>
+
+                    <div className="shadow-xl shadow-amber-900/2 rounded-3xl overflow-hidden border border-default-200">
+                      <MandatoryBequestForm
+                        hasMandatoryBequest={hasMandatoryBequest}
+                        setHasMandatoryBequest={handleSetHasMandatoryBequest}
+                        mandatoryBequests={mandatoryBequests}
+                        setMandatoryBequests={setMandatoryBequests}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -590,8 +647,8 @@ export default function CalculatorPageV2() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => updateHeir('HUSBAND', 1)}
                             className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${heirs['HUSBAND'] === 1
-                                ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
-                                : 'border-default-200 hover:border-amber-300'
+                              ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
+                              : 'border-default-200 hover:border-amber-300'
                               }`}
                           >
                             <UserCheck size={32} className={`mb-1.5 ${heirs['HUSBAND'] === 1 ? 'text-amber-650' : 'text-muted-foreground'}`} />
@@ -603,8 +660,8 @@ export default function CalculatorPageV2() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => updateHeir('HUSBAND', -1)}
                             className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${heirs['HUSBAND'] === -1
-                                ? 'border-red-500 bg-red-50/10 shadow-xs ring-1 ring-red-500/30'
-                                : 'border-default-200 hover:border-amber-300'
+                              ? 'border-red-500 bg-red-50/10 shadow-xs ring-1 ring-red-500/30'
+                              : 'border-default-200 hover:border-amber-300'
                               }`}
                           >
                             <UserX size={32} className={`mb-1.5 ${heirs['HUSBAND'] === -1 ? 'text-red-500' : 'text-muted-foreground'}`} />
@@ -630,8 +687,8 @@ export default function CalculatorPageV2() {
                               }
                             }}
                             className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${heirs['WIFE'] > 0
-                                ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
-                                : 'border-default-200 hover:border-amber-300'
+                              ? 'border-amber-600 bg-amber-50/20 shadow-xs ring-1 ring-amber-600/30'
+                              : 'border-default-200 hover:border-amber-300'
                               }`}
                           >
                             <UserCheck size={32} className={`mb-1.5 ${heirs['WIFE'] > 0 ? 'text-amber-650' : 'text-muted-foreground'}`} />
@@ -664,8 +721,8 @@ export default function CalculatorPageV2() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => updateHeir('WIFE', -1)}
                             className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${heirs['WIFE'] === -1
-                                ? 'border-red-500 bg-red-50/10 shadow-xs ring-1 ring-red-500/30'
-                                : 'border-default-200 hover:border-amber-300'
+                              ? 'border-red-500 bg-red-50/10 shadow-xs ring-1 ring-red-500/30'
+                              : 'border-default-200 hover:border-amber-300'
                               }`}
                           >
                             <UserX size={32} className={`mb-1.5 ${heirs['WIFE'] === -1 ? 'text-red-500' : 'text-muted-foreground'}`} />
@@ -760,8 +817,8 @@ export default function CalculatorPageV2() {
                         type="button"
                         onClick={() => updateHeir('FATHER', heirs['FATHER'] > 0 ? 0 : 1)}
                         className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${heirs['FATHER'] > 0
-                            ? 'border-amber-600 bg-amber-50/20 shadow-xs'
-                            : 'border-default-200 hover:border-amber-300'
+                          ? 'border-amber-600 bg-amber-50/20 shadow-xs'
+                          : 'border-default-200 hover:border-amber-300'
                           }`}
                       >
                         <UserCheck size={28} className={`mb-1.5 ${heirs['FATHER'] > 0 ? 'text-amber-650' : 'text-muted-foreground'}`} />
@@ -774,8 +831,8 @@ export default function CalculatorPageV2() {
                         type="button"
                         onClick={() => updateHeir('MOTHER', heirs['MOTHER'] > 0 ? 0 : 1)}
                         className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${heirs['MOTHER'] > 0
-                            ? 'border-amber-600 bg-amber-50/20 shadow-xs'
-                            : 'border-default-200 hover:border-amber-300'
+                          ? 'border-amber-600 bg-amber-50/20 shadow-xs'
+                          : 'border-default-200 hover:border-amber-300'
                           }`}
                       >
                         <UserCheck size={28} className={`mb-1.5 ${heirs['MOTHER'] > 0 ? 'text-amber-650' : 'text-muted-foreground'}`} />

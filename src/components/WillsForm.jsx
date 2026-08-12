@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Button, Input, Select, ListBox } from '@heroui/react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ScrollText, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { ScrollText, Plus, Minus, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function WillsForm({
   wills,
@@ -22,10 +22,10 @@ export default function WillsForm({
       <Card className="rounded-3xl shadow-none border border-default-200">
         <Card.Header>
           <Card.Title className="text-lg font-bold flex items-center gap-2 tracking-tight">
-            <ScrollText size={20} className="text-amber-600" /> الوصايا (اختياري)
+            <ScrollText size={20} className="text-amber-600" /> الوصايا الاختيارية (اختياري)
           </Card.Title>
           <Card.Description>
-            تُنفذ الوصية في حدود ثلث التركة بعد خصم الديون. ما زاد عن الثلث يتطلب موافقة الورثة.
+            تُنفذ الوصية الاختيارية في حدود ثلث التركة بعد خصم الديون والوصايا الواجبة.
           </Card.Description>
         </Card.Header>
 

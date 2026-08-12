@@ -1,3 +1,12 @@
+/**
+ * @file Explanations.js
+ * @description Standard Arabic relationship names and explanation text formatting utilities.
+ */
+
+/**
+ * Map of standard heir relationship codes to their authentic Arabic legal names.
+ * @type {Object.<string, string>}
+ */
 export const HEIR_NAMES_AR = {
     'HUSBAND': 'الزوج',
     'WIFE': 'الزوجة',
@@ -38,6 +47,13 @@ export const HEIR_NAMES_AR = {
     'FATHER_COUSIN_PATERNAL': 'ابن عم الأب لأب'
 };
 
+/**
+ * Formats Sharia legal explanation text to accurately match the deceased's gender (المتوفى / المتوفاة).
+ * 
+ * @param {string} whyText - The original explanation template text.
+ * @param {'male'|'female'} gender - The gender of the deceased person.
+ * @returns {string} The localized explanation text with appropriate gender pronouns.
+ */
 export function formatExplanation(whyText, gender) {
     if (!whyText) return '';
     if (gender === 'female') {

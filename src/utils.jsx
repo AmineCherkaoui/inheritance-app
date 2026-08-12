@@ -74,6 +74,20 @@ export const serializeState = (state) => {
       });
     }
 
+    if (state.mandatoryBequests && state.mandatoryBequests.length > 0) {
+      compact.mb = state.mandatoryBequests.map(item => ({
+        t: item.type === 'son' ? 's' : 'd',
+        s: item.sonsCount,
+        d: item.daughtersCount,
+        gs: item.greatSonsCount,
+        gd: item.greatDaughtersCount,
+        ma: item.motherAlive !== false ? 1 : 0,
+        sa: item.spouseAlive !== false ? 1 : 0,
+        gsa: item.greatSpouseAlive === true ? 1 : 0,
+        i: item.id
+      }));
+    }
+
     const json = JSON.stringify(compact);
     const b64 = btoa(unescape(encodeURIComponent(json)));
     return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -122,6 +136,20 @@ export const deserializeState = (str) => {
         if (cw.i) w.id = cw.i;
         return w;
       });
+    }
+
+    if (parsed.mb) {
+      state.mandatoryBequests = parsed.mb.map(item => ({
+        id: item.i,
+        type: item.t === 's' ? 'son' : 'daughter',
+        sonsCount: item.s,
+        daughtersCount: item.d,
+        greatSonsCount: item.gs,
+        greatDaughtersCount: item.gd,
+        motherAlive: item.ma !== 0,
+        spouseAlive: item.sa !== 0,
+        greatSpouseAlive: item.gsa === 1
+      }));
     }
 
     return state;

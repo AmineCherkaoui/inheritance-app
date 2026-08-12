@@ -339,7 +339,7 @@ export default function PdfReport({ result }) {
         )}
 
         {/* Excluded/Blocked Heirs */}
-        {blockedHeirs.length > 0 && (
+        {/* {blockedHeirs.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>الورثة المحجوبون</Text>
             {blockedHeirs.map((heir, idx) => (
@@ -355,7 +355,7 @@ export default function PdfReport({ result }) {
               </View>
             ))}
           </View>
-        )}
+        )} */}
 
         {/* Share Explanations (أسباب الميراث والوصايا) */}
         <View style={styles.section}>

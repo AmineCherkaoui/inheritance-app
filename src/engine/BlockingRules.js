@@ -1,7 +1,36 @@
+/**
+ * @file BlockingRules.js
+ * @description Implements Islamic jurisprudence total exclusion rules (حجب الحرمان).
+ * Evaluates priority hierarchy between heirs: descendants, ascendants, collaterals, and agnatic relatives.
+ */
+
 import { hasMaleDescendants, hasFemaleDescendants, hasFather, hasGrandfather } from './Helpers.js';
 
+/**
+ * Applies Islamic blocking rules (حجب الحرمان) to the active heirs map in place.
+ * Sets `is_blocked = true`, records `blocked_by`, and generates authentic legal explanations.
+ * 
+ * Hierarchy and Exclusion Principles:
+ * 1. Mother blocks all grandmothers (maternal & paternal).
+ * 2. Father blocks grandfathers, paternal grandmothers, and all collateral relatives (siblings, nephews, uncles).
+ * 3. Sons block all grandchildren, siblings, nephews, uncles, and cousins.
+ * 4. Grandsons block lower grandchildren and collaterals.
+ * 5. Female descendants block maternal siblings.
+ * 6. Daughters (>=2) block granddaughters unless accompanied by a male agnate (Asabah / معصب).
+ * 7. Full brothers and Asabah sisters block paternal siblings and lower agnates.
+ * 8. Priority among male agnates follows class (جهة), degree (درجة), and strength of relation (قوة القرابة).
+ * 
+ * @param {import('./Helpers.js').HeirMap} heirs - Active heirs map modified in place.
+ * @param {Object.<string, string>} explanations - Explanations dictionary for recording blocking reasons.
+ * @returns {void}
+ */
 export function applyBlockingRules(heirs, explanations) {
-    // Helper function to block an heir
+    /**
+     * Helper to set blocking status and record the legal justification.
+     * @param {string} blockedKey - Relationship code of the excluded heir.
+     * @param {string} blockerKey - Relationship code of the excluding heir.
+     * @param {string} reason - Detailed Arabic legal explanation.
+     */
     const block = (blockedKey, blockerKey, reason) => {
         if (heirs[blockedKey]) {
             heirs[blockedKey].is_blocked = true;
@@ -10,120 +39,180 @@ export function applyBlockingRules(heirs, explanations) {
         }
     };
 
-    // 1. Mother blocks all grandmothers
+    /**
+     * Helper to block a list of heirs with a shared reason.
+     * @param {string[]} blockedKeys - Array of relationship codes to block.
+     * @param {string} blockerKey - Relationship code of the excluding heir.
+     * @param {string} reason - Detailed Arabic legal explanation.
+     */
+    const blockMany = (blockedKeys, blockerKey, reason) => {
+        for (const k of blockedKeys) {
+            block(k, blockerKey, reason);
+        }
+    };
+
+    // =========================================================================
+    // 1. Mother (الأم) Blocking Rules
+    // =========================================================================
     if (heirs['MOTHER'] && !heirs['MOTHER'].is_blocked) {
-        const reason = `الجدة محجوبة حجب حرمان لوجود الأم.`;
-        ['PATERNAL_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', 'MATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_PATERNAL_GREAT_GRANDMOTHER']
-            .forEach(gm => block(gm, 'MOTHER', reason));
+        const gmReason = `الجدة محجوبة حجب حرمان لوجود الأم، لأن الأم أصل الجدات ولا ترث الجدة مع وجود أمها.`;
+        blockMany([
+            'PATERNAL_GRANDMOTHER',
+            'MATERNAL_GRANDMOTHER',
+            'MATERNAL_GREAT_GRANDMOTHER',
+            'PATERNAL_GREAT_GRANDMOTHER',
+            'MATERNAL_PATERNAL_GREAT_GRANDMOTHER'
+        ], 'MOTHER', gmReason);
     }
 
-    // 2. Father blocks grandfathers & paternal grandmothers
+    // =========================================================================
+    // 2. Father (الأب) Blocking Rules
+    // =========================================================================
     if (heirs['FATHER'] && !heirs['FATHER'].is_blocked) {
-        block('PATERNAL_GRANDFATHER', 'FATHER', `الجد محجوب لوجود الأب.`);
+        // Father blocks all grandfathers
+        block('PATERNAL_GRANDFATHER', 'FATHER', `الجد محجوب لوجود الأب، فالأب أصل الجد وأقرب منه.`);
         block('PATERNAL_GREAT_GRANDFATHER', 'FATHER', `الجد محجوب لوجود الأب.`);
-        
-        // Father blocks paternal grandmothers (since they are related through him)
-        const patGmReason = `الجدة لأب محجوبة لوجود الأب.`;
-        ['PATERNAL_GRANDMOTHER', 'PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_PATERNAL_GREAT_GRANDMOTHER']
-            .forEach(gm => block(gm, 'FATHER', patGmReason));
-        
-        // Father blocks all siblings and below
-        const siblingReason = `محجوب(ة) حجب حرمان لوجود الأب.`;
-        ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
-         'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL']
-            .forEach(h => block(h, 'FATHER', siblingReason));
+
+        // Father blocks paternal grandmothers (who connect through him)
+        const patGmReason = `الجدة لأب محجوبة لوجود الأب لأنها تدلي به للمتوفى.`;
+        blockMany([
+            'PATERNAL_GRANDMOTHER',
+            'PATERNAL_GREAT_GRANDMOTHER',
+            'MATERNAL_PATERNAL_GREAT_GRANDMOTHER'
+        ], 'FATHER', patGmReason);
+
+        // Father blocks all siblings, nephews, uncles, and cousins
+        const collateralReason = `محجوب(ة) حجب حرمان لوجود الأب (الأصل الذكر الأقرب).`;
+        blockMany([
+            'FULL_BROTHER', 'FULL_SISTER',
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'MATERNAL_BROTHER', 'MATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL',
+            'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
+            'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL'
+        ], 'FATHER', collateralReason);
     }
 
-    // 3. Paternal Grandfather blocking rules
+    // =========================================================================
+    // 3. Grandfather (الجد لأب) Blocking Rules
+    // =========================================================================
     if (heirs['PATERNAL_GRANDFATHER'] && !heirs['PATERNAL_GRANDFATHER'].is_blocked) {
         block('PATERNAL_GREAT_GRANDFATHER', 'PATERNAL_GRANDFATHER', `الجد الأبعد محجوب بالجد الأقرب.`);
-        block('PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDFATHER', `الجدة لأب محجوبة بالجد.`);
-        block('MATERNAL_PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDFATHER', `الجدة لأب محجوبة بالجد.`);
+        block('PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDFATHER', `الجدة لأب محجوبة بالجد الأقرب.`);
+        block('MATERNAL_PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDFATHER', `الجدة لأب محجوبة بالجد الأقرب.`);
 
-        // Grandfather blocks maternal siblings
-        const matSibReason = `الإخوة لأم محجوبون بالجد لأب.`;
+        // Grandfather blocks maternal siblings (الإخوة لأم)
+        const matSibReason = `الإخوة لأم محجوبون بالجد لأب (الأصل الذكر الوارث) إجماعاً.`;
         block('MATERNAL_BROTHER', 'PATERNAL_GRANDFATHER', matSibReason);
         block('MATERNAL_SISTER', 'PATERNAL_GRANDFATHER', matSibReason);
 
-        // Grandfather blocks nephews, uncles, and cousins (but NOT full/paternal siblings)
-        const belowReason = `محجوب لوجود الجد لأب.`;
-        ['NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
-         'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL']
-            .forEach(h => block(h, 'PATERNAL_GRANDFATHER', belowReason));
+        // Grandfather blocks nephews, uncles, and cousins
+        const belowReason = `محجوب لوجود الجد لأب (الأصل الوارث مقدم على الحواشي الأبعد).`;
+        blockMany([
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL',
+            'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
+            'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL'
+        ], 'PATERNAL_GRANDFATHER', belowReason);
     }
 
-    // Paternal Great Grandfather blocking rules
+    // Great-Grandfather
     if (heirs['PATERNAL_GREAT_GRANDFATHER'] && !heirs['PATERNAL_GREAT_GRANDFATHER'].is_blocked) {
         const gpReason = `محجوب لوجود الجد لأب الأعلى.`;
         block('MATERNAL_BROTHER', 'PATERNAL_GREAT_GRANDFATHER', gpReason);
         block('MATERNAL_SISTER', 'PATERNAL_GREAT_GRANDFATHER', gpReason);
-        ['NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL']
-            .forEach(h => block(h, 'PATERNAL_GREAT_GRANDFATHER', gpReason));
+        blockMany([
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL'
+        ], 'PATERNAL_GREAT_GRANDFATHER', gpReason);
     }
 
-    // 4. Descendants blocking rules
-    // Son blocks all descendants below him and all siblings, nephews, uncles, cousins
+    // =========================================================================
+    // 4. Male Descendants (الفروع الذكور) Blocking Rules
+    // =========================================================================
+    // Son (الابن)
     if (heirs['SON'] && !heirs['SON'].is_blocked) {
-        const reason = `محجوب(ة) حجب حرمان لوجود الابن.`;
-        ['GRANDSON', 'GRANDDAUGHTER', 'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER',
-         'FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
-         'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL']
-            .forEach(h => block(h, 'SON', reason));
+        const sonReason = `محجوب(ة) حجب حرمان لوجود الابن (الفرع الوارث المذكر الأقرب).`;
+        blockMany([
+            'GRANDSON', 'GRANDDAUGHTER',
+            'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER',
+            'FULL_BROTHER', 'FULL_SISTER',
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'MATERNAL_BROTHER', 'MATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL',
+            'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL',
+            'FATHER_COUSIN_FULL', 'FATHER_COUSIN_PATERNAL'
+        ], 'SON', sonReason);
     }
 
-    // Grandson blocks below him and siblings, nephews, uncles, cousins
+    // Grandson (ابن الابن)
     if (heirs['GRANDSON'] && !heirs['GRANDSON'].is_blocked) {
-        const reason = `محجوب(ة) حجب حرمان لوجود ابن الابن.`;
-        ['GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER',
-         'FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL']
-            .forEach(h => block(h, 'GRANDSON', reason));
+        const gsReason = `محجوب(ة) حجب حرمان لوجود ابن الابن.`;
+        blockMany([
+            'GREAT_GRANDSON', 'GREAT_GRANDDAUGHTER',
+            'FULL_BROTHER', 'FULL_SISTER',
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'MATERNAL_BROTHER', 'MATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL'
+        ], 'GRANDSON', gsReason);
     }
 
-    // Great Grandson blocks below him
+    // Great Grandson (ابن ابن الابن)
     if (heirs['GREAT_GRANDSON'] && !heirs['GREAT_GRANDSON'].is_blocked) {
-        const reason = `محجوب(ة) لوجود ابن ابن الابن.`;
-        ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'GREAT_GRANDSON', reason));
+        const ggsReason = `محجوب(ة) لوجود ابن ابن الابن.`;
+        blockMany([
+            'FULL_BROTHER', 'FULL_SISTER',
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'MATERNAL_BROTHER', 'MATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL'
+        ], 'GREAT_GRANDSON', ggsReason);
     }
 
-    // Female descendants blocking rules
-    // If we have daughters or granddaughter, they block maternal siblings
+    // =========================================================================
+    // 5. Female Descendants (الفروع الإناث) Blocking Rules
+    // =========================================================================
+    // Female descendants block maternal siblings
     if (hasFemaleDescendants(heirs)) {
-        const reason = `الإخوة لأم محجوبون لوجود فرع وارث.`;
-        block('MATERNAL_BROTHER', 'FEMALE_DESCENDANTS', reason);
-        block('MATERNAL_SISTER', 'FEMALE_DESCENDANTS', reason);
+        const matReason = `الإخوة لأم محجوبون لوجود فرع وارث للمتوفى.`;
+        block('MATERNAL_BROTHER', 'FEMALE_DESCENDANTS', matReason);
+        block('MATERNAL_SISTER', 'FEMALE_DESCENDANTS', matReason);
     }
 
-    // Two or more daughters block granddaughters unless there is a grandson (asbah)
+    // Two or more daughters block granddaughters unless accompanied by a grandson (Asabah)
     if (heirs['DAUGHTER'] && heirs['DAUGHTER'].count >= 2) {
         const hasActiveGrandson = heirs['GRANDSON'] && !heirs['GRANDSON'].is_blocked;
         if (!hasActiveGrandson) {
             block('GRANDDAUGHTER', 'DAUGHTER', `بنت الابن محجوبة لاستغراق البنات الصلبيات فرض الثلثين ولعدم وجود عاصب (ابن ابن) يعصبها.`);
         }
-        
-        // Also block great granddaughters if no great grandson
+
         const hasActiveGreatGrandson = heirs['GREAT_GRANDSON'] && !heirs['GREAT_GRANDSON'].is_blocked;
         if (!hasActiveGreatGrandson) {
             block('GREAT_GRANDDAUGHTER', 'DAUGHTER', `بنت ابن الابن محجوبة لاستغراق البنات الصلبيات فرض الثلثين ولعدم وجود عاصب.`);
         }
     }
 
-    // Granddaughters (two or more) block great granddaughters unless there is a great grandson
+    // Granddaughters (>=2) block great-granddaughters unless accompanied by great-grandson
     if (heirs['GRANDDAUGHTER'] && !heirs['GRANDDAUGHTER'].is_blocked && heirs['GRANDDAUGHTER'].count >= 2) {
         const hasActiveGreatGrandson = heirs['GREAT_GRANDSON'] && !heirs['GREAT_GRANDSON'].is_blocked;
         if (!hasActiveGreatGrandson) {
@@ -131,45 +220,54 @@ export function applyBlockingRules(heirs, explanations) {
         }
     }
 
-    // 5. Maternal grandmother blocks maternal great-grandmothers
+    // =========================================================================
+    // 6. Grandmother Hierarchy Blocking
+    // =========================================================================
     if (heirs['MATERNAL_GRANDMOTHER'] && !heirs['MATERNAL_GRANDMOTHER'].is_blocked) {
         block('MATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', `محجوبة بالجدة لأم الأقرب منها.`);
         block('MATERNAL_PATERNAL_GREAT_GRANDMOTHER', 'MATERNAL_GRANDMOTHER', `محجوبة بالجدة لأم الأقرب منها.`);
     }
 
-    // Paternal grandmother blocks paternal great-grandmothers
     if (heirs['PATERNAL_GRANDMOTHER'] && !heirs['PATERNAL_GRANDMOTHER'].is_blocked) {
         block('PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDMOTHER', `محجوبة بالجدة لأب الأقرب منها.`);
         block('MATERNAL_PATERNAL_GREAT_GRANDMOTHER', 'PATERNAL_GRANDMOTHER', `محجوبة بالجدة لأب الأقرب منها.`);
     }
 
-    // 6. Full Brother blocking rules
+    // =========================================================================
+    // 7. Full Siblings (الإخوة والأخوات الأشقاء) Blocking Rules
+    // =========================================================================
+    // Full Brother (الأخ الشقيق)
     if (heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked) {
-        const fbReason = `محجوب(ة) لوجود الأخ الشقيق.`;
-        ['PATERNAL_BROTHER', 'PATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL',
-         'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL', 'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL']
-            .forEach(h => block(h, 'FULL_BROTHER', fbReason));
+        const fbReason = `محجوب(ة) لوجود الأخ الشقيق (العاصب الأقرب في جهة الأخوة).`;
+        blockMany([
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL',
+            'GREAT_COUSIN_FULL', 'GREAT_COUSIN_PATERNAL',
+            'FATHER_UNCLE_FULL', 'FATHER_UNCLE_PATERNAL'
+        ], 'FULL_BROTHER', fbReason);
     }
 
-    // 7. Full Sister Asabah with Others (العصبة مع الغير) blocking rules
-    // Sisters with daughters become Asabah, which block paternal siblings, nephews, uncles, etc.
+    // Full Sister Asabah with Others (الأخت الشقيقة عصبة مع الغير)
     const hasDaughtersOrGranddaughters = hasFemaleDescendants(heirs);
     const hasFullSister = heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked;
     const noMaleDescendantOrFatherOrGF = !hasMaleDescendants(heirs) && !hasFather(heirs) && !hasGrandfather(heirs);
-    
     const fullSisterIsAsabahWithOthers = hasDaughtersOrGranddaughters && hasFullSister && noMaleDescendantOrFatherOrGF;
-    
+
     if (fullSisterIsAsabahWithOthers) {
-        const fsReason = `محجوب(ة) لوجود الأخت الشقيقة التي صارت عصبة مع البنات (الأخوات مع البنات عصبة).`;
-        ['PATERNAL_BROTHER', 'PATERNAL_SISTER',
-         'NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'FULL_SISTER', fsReason));
+        const fsReason = `محجوب(ة) لوجود الأخت الشقيقة التي صارت عصبة مع البنات (الأخوات مع البنات عصبة كالأخ الشقيق).`;
+        blockMany([
+            'PATERNAL_BROTHER', 'PATERNAL_SISTER',
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL'
+        ], 'FULL_SISTER', fsReason);
     }
 
-    // Two or more full sisters block paternal sisters, unless there's a paternal brother (asbah)
+    // Two or more full sisters block paternal sisters (unless accompanied by paternal brother)
     if (heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked && heirs['FULL_SISTER'].count >= 2) {
         const hasPaternalBrother = heirs['PATERNAL_BROTHER'] && !heirs['PATERNAL_BROTHER'].is_blocked;
         if (!hasPaternalBrother) {
@@ -177,74 +275,68 @@ export function applyBlockingRules(heirs, explanations) {
         }
     }
 
-    // 8. Paternal Brother blocking rules
+    // =========================================================================
+    // 8. Paternal Siblings (الإخوة لأب) Blocking Rules
+    // =========================================================================
     if (heirs['PATERNAL_BROTHER'] && !heirs['PATERNAL_BROTHER'].is_blocked) {
         const pbReason = `محجوب لوجود الأخ لأب.`;
-        ['NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'PATERNAL_BROTHER', pbReason));
+        blockMany([
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL'
+        ], 'PATERNAL_BROTHER', pbReason);
     }
 
-    // Paternal Sister Asabah with Others blocking rules
+    // Paternal Sister Asabah with Others
     const hasPaternalSister = heirs['PATERNAL_SISTER'] && !heirs['PATERNAL_SISTER'].is_blocked;
     const noFullBrother = !(heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked);
     const paternalSisterIsAsabahWithOthers = hasDaughtersOrGranddaughters && hasPaternalSister && noMaleDescendantOrFatherOrGF && noFullBrother && !fullSisterIsAsabahWithOthers;
 
     if (paternalSisterIsAsabahWithOthers) {
         const psReason = `محجوب لوجود الأخت لأب التي صارت عصبة مع البنات.`;
-        ['NEPHEW_FULL', 'NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'PATERNAL_SISTER', psReason));
+        blockMany([
+            'NEPHEW_FULL', 'NEPHEW_PATERNAL',
+            'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
+            'UNCLE_FULL', 'UNCLE_PATERNAL',
+            'COUSIN_FULL', 'COUSIN_PATERNAL'
+        ], 'PATERNAL_SISTER', psReason);
     }
 
-    // 9. Nephew (Full) blocking
+    // =========================================================================
+    // 9. Collateral Relatives (أبناء الإخوة والأعمام وبنوهم)
+    // =========================================================================
     if (heirs['NEPHEW_FULL'] && !heirs['NEPHEW_FULL'].is_blocked) {
-        const reason = `محجوب لوجود ابن الأخ الشقيق.`;
-        ['NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'NEPHEW_FULL', reason));
+        blockMany(['NEPHEW_PATERNAL', 'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL', 'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'NEPHEW_FULL', `محجوب لوجود ابن الأخ الشقيق.`);
     }
 
-    // Nephew (Paternal) blocking
     if (heirs['NEPHEW_PATERNAL'] && !heirs['NEPHEW_PATERNAL'].is_blocked) {
-        const reason = `محجوب لوجود ابن الأخ لأب.`;
-        ['GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',
-         'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'NEPHEW_PATERNAL', reason));
+        blockMany(['GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL', 'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'NEPHEW_PATERNAL', `محجوب لوجود ابن الأخ لأب.`);
     }
 
-    // Great Nephew (Full) blocking
     if (heirs['GREAT_NEPHEW_FULL'] && !heirs['GREAT_NEPHEW_FULL'].is_blocked) {
-        const reason = `محجوب لوجود ابن ابن الأخ الشقيق.`;
-        ['GREAT_NEPHEW_PATERNAL', 'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'GREAT_NEPHEW_FULL', reason));
+        blockMany(['GREAT_NEPHEW_PATERNAL', 'UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'GREAT_NEPHEW_FULL', `محجوب لوجود ابن ابن الأخ الشقيق.`);
     }
 
-    // Great Nephew (Paternal) blocking
     if (heirs['GREAT_NEPHEW_PATERNAL'] && !heirs['GREAT_NEPHEW_PATERNAL'].is_blocked) {
-        const reason = `محجوب لوجود ابن ابن الأخ لأب.`;
-        ['UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'GREAT_NEPHEW_PATERNAL', reason));
+        blockMany(['UNCLE_FULL', 'UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'GREAT_NEPHEW_PATERNAL', `محجوب لوجود ابن ابن الأخ لأب.`);
     }
 
-    // Uncle (Full) blocking
     if (heirs['UNCLE_FULL'] && !heirs['UNCLE_FULL'].is_blocked) {
-        const reason = `محجوب لوجود العم الشقيق.`;
-        ['UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'UNCLE_FULL', reason));
+        blockMany(['UNCLE_PATERNAL', 'COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'UNCLE_FULL', `محجوب لوجود العم الشقيق.`);
     }
 
-    // Uncle (Paternal) blocking
     if (heirs['UNCLE_PATERNAL'] && !heirs['UNCLE_PATERNAL'].is_blocked) {
-        const reason = `محجوب لوجود العم لأب.`;
-        ['COUSIN_FULL', 'COUSIN_PATERNAL']
-            .forEach(h => block(h, 'UNCLE_PATERNAL', reason));
+        blockMany(['COUSIN_FULL', 'COUSIN_PATERNAL'],
+            'UNCLE_PATERNAL', `محجوب لوجود العم لأب.`);
     }
 
-    // Cousin (Full) blocking
     if (heirs['COUSIN_FULL'] && !heirs['COUSIN_FULL'].is_blocked) {
-        const reason = `محجوب لوجود ابن العم الشقيق.`;
-        ['COUSIN_PATERNAL']
-            .forEach(h => block(h, 'COUSIN_FULL', reason));
+        block('COUSIN_PATERNAL', 'COUSIN_FULL', `محجوب لوجود ابن العم الشقيق.`);
     }
 }

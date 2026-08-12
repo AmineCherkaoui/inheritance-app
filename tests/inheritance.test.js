@@ -1572,3 +1572,113 @@ test('55 - Wife Only (Gets Radd as sole heir)', () => {
 
     assert.strictEqual(d.WIFE.share_fraction, '1');
 });
+
+/*
+====================================================
+56 - Moroccan Mandatory Bequest: Wife + Parents + Son Branch (Living Grandchildren + Great-Grandchildren) + Daughter Branch
+====================================================
+*/
+test('56 - Moroccan Mandatory Bequest: Wife + Parents + Living Grandchildren + Great-Grandchildren + Daughter Branch', () => {
+    const calc = new InheritanceCalculator({
+        total_estate_value: 45000,
+        heirs: [
+            { relationship: 'WIFE', count: 1 },
+            { relationship: 'FATHER', count: 1 },
+            { relationship: 'MOTHER', count: 1 }
+        ],
+        mandatoryBequests: [
+            {
+                id: 'mb-daughter',
+                type: 'daughter',
+                sonsCount: 1,
+                daughtersCount: 1,
+                spouseAlive: true,
+                motherAlive: true
+            },
+            {
+                id: 'mb-son',
+                type: 'son',
+                sonsCount: 1,
+                daughtersCount: 1,
+                greatSonsCount: 1,
+                greatDaughtersCount: 1,
+                spouseAlive: true,
+                motherAlive: true,
+                greatSpouseAlive: true
+            }
+        ]
+    });
+
+    const res = calc.calculate();
+    const d = {};
+    for (const dist of res.distributions) {
+        d[dist.relationship_display] = dist;
+    }
+
+    assert.strictEqual(d['الزوجة'].total_value, 4402.34);
+    assert.strictEqual(d['الأم'].total_value, 5869.79);
+    assert.strictEqual(d['الأب'].total_value, 5869.79);
+    assert.strictEqual(d['ابن ابن (من الابن المتوفى #1)'].total_value, 12717.88);
+    assert.strictEqual(d['بنت ابن (من الابن المتوفى #1)'].total_value, 6358.94);
+    assert.strictEqual(d['ابن بنت (من البنت المتوفية #1)'].total_value, 6250);
+    assert.strictEqual(d['بنت بنت (من البنت المتوفية #1)'].total_value, 3125);
+    assert.strictEqual(d['ابن ابن ابن (من الابن المتوفى #1)'].total_value, 270.83);
+    assert.strictEqual(d['بنت ابن ابن (من الابن المتوفى #1)'].total_value, 135.42);
+});
+
+/*
+====================================================
+57 - Moroccan Mandatory Bequest: Wife + Parents + Son + Daughter + Deceased Son & Daughter Branches (Mothers Deceased)
+====================================================
+*/
+test('57 - Moroccan Mandatory Bequest: Wife + Parents + Son + Daughter + Deceased Son & Daughter Branches (Mothers Deceased)', () => {
+    const calc = new InheritanceCalculator({
+        total_estate_value: 45000,
+        heirs: [
+            { relationship: 'WIFE', count: 1 },
+            { relationship: 'FATHER', count: 1 },
+            { relationship: 'MOTHER', count: 1 },
+            { relationship: 'SON', count: 1 },
+            { relationship: 'DAUGHTER', count: 1 }
+        ],
+        mandatoryBequests: [
+            {
+                id: 'mb-son',
+                type: 'son',
+                sonsCount: 1,
+                daughtersCount: 1,
+                greatSonsCount: 1,
+                greatDaughtersCount: 1,
+                spouseAlive: false,
+                motherAlive: false,
+                greatSpouseAlive: false
+            },
+            {
+                id: 'mb-daughter',
+                type: 'daughter',
+                sonsCount: 1,
+                daughtersCount: 1,
+                spouseAlive: false,
+                motherAlive: false
+            }
+        ]
+    });
+
+    const res = calc.calculate();
+    const d = {};
+    for (const dist of res.distributions) {
+        d[dist.relationship_display] = dist;
+    }
+
+    assert.strictEqual(d['الابن'].total_value, 13446.37);
+    assert.strictEqual(d['البنت'].total_value, 6723.19);
+    assert.strictEqual(d['الأم'].total_value, 6206.02);
+    assert.strictEqual(d['الأب'].total_value, 6206.02);
+    assert.strictEqual(d['الزوجة'].total_value, 4654.51);
+    assert.strictEqual(d['ابن ابن (من الابن المتوفى #1)'].total_value, 2166.67);
+    assert.strictEqual(d['بنت ابن (من الابن المتوفى #1)'].total_value, 1083.33);
+    assert.strictEqual(d['ابن بنت (من البنت المتوفية #1)'].total_value, 1805.56);
+    assert.strictEqual(d['بنت بنت (من البنت المتوفية #1)'].total_value, 902.78);
+    assert.strictEqual(d['ابن ابن ابن (من الابن المتوفى #1)'].total_value, 1203.7);
+    assert.strictEqual(d['بنت ابن ابن (من الابن المتوفى #1)'].total_value, 601.85);
+});

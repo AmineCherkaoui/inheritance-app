@@ -1,10 +1,41 @@
+/**
+ * @file FixedShares.js
+ * @description Calculates Quranic prescribed fixed shares (أصحاب الفروض).
+ * Implements the 6 primary fractions (1/2, 1/4, 1/8, 2/3, 1/3, 1/6) and the special Umariyyatayn cases.
+ */
+
 import Fraction from '../fraction.js';
 import { hasDescendants, hasMaleDescendants, hasFemaleDescendants } from './Helpers.js';
 
+/**
+ * Calculates and assigns Quranic fixed shares (الفروض المقدرة) to eligible heirs.
+ * Deducts each assigned share from the total remaining estate fraction.
+ * 
+ * Rules Implemented:
+ * 1. Husband (الزوج): 1/2 without children, 1/4 with children (Surah An-Nisa: 12).
+ * 2. Wife (الزوجة): 1/4 without children, 1/8 with children (Surah An-Nisa: 12).
+ * 3. Mother (الأم): 1/3 without children & <2 siblings; 1/6 with children or >=2 siblings; 1/3 of remainder in Umariyyatayn (Surah An-Nisa: 11).
+ * 4. Father (الأب): 1/6 fixed share when male/female descendants exist (Surah An-Nisa: 11).
+ * 5. Grandfather (الجد لأب): 1/6 fixed share when descendants exist and not sharing with siblings.
+ * 6. Daughters (البنات): 1/2 for single, 2/3 for multiple (without son).
+ * 7. Granddaughters (بنات الابن): 1/2 for single, 2/3 for multiple (without higher females); 1/6 with single daughter (تكملة للثلثين).
+ * 8. Great-Granddaughters (بنات ابن الابن): 1/2, 2/3, or 1/6 completion.
+ * 9. Full Sisters (الأخوات الشقيقات): 1/2 for single, 2/3 for multiple (kalala, no full brother).
+ * 10. Paternal Sisters (الأخوات لأب): 1/2, 2/3, or 1/6 completion with single full sister.
+ * 11. Maternal Siblings (الإخوة لأم): 1/6 for single, 1/3 shared equally between males & females (Surah An-Nisa: 12).
+ * 
+ * @param {import('./Helpers.js').HeirMap} heirs - Active heirs map.
+ * @param {Object.<string, {share: Fraction, count: number, asabah?: boolean}>} results - Distribution results dictionary.
+ * @param {Object.<string, string>} explanations - Legal reasons dictionary.
+ * @param {Fraction} remaining - Remaining fraction of the estate (starts at 1).
+ * @returns {Fraction} Updated remaining fraction after deducting all assigned fixed shares.
+ */
 export function calculateFixedShares(heirs, results, explanations, remaining) {
     const hasChildren = hasDescendants(heirs);
 
-    // --- 1. Husband ---
+    // =========================================================================
+    // 1. Husband (الزوج)
+    // =========================================================================
     if (heirs['HUSBAND']) {
         const share = hasChildren ? new Fraction(1, 4) : new Fraction(1, 2);
         results['HUSBAND'] = { share, count: 1 };
@@ -14,7 +45,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         remaining = remaining.sub(share);
     }
 
-    // --- 2. Wife ---
+    // =========================================================================
+    // 2. Wife (الزوجة)
+    // =========================================================================
     if (heirs['WIFE']) {
         const count = heirs['WIFE'].count || 1;
         const share = hasChildren ? new Fraction(1, 8) : new Fraction(1, 4);
@@ -25,20 +58,21 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         remaining = remaining.sub(share);
     }
 
-    // Determine total sibling count (active and blocked) for mother's reduction
+    // Count all siblings (active and blocked) to evaluate mother's reduction
     let siblingCount = 0;
     const siblingKeys = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER', 'MATERNAL_BROTHER', 'MATERNAL_SISTER'];
     for (const key of siblingKeys) {
         if (heirs[key]) {
-            siblingCount += heirs[key].count;
+            siblingCount += heirs[key].count || 0;
         }
     }
     const has2OrMoreSiblings = siblingCount >= 2;
 
-    // --- 3. Mother ---
+    // =========================================================================
+    // 3. Mother (الأم)
+    // =========================================================================
     if (heirs['MOTHER'] && !heirs['MOTHER'].is_blocked) {
-        // Check for Umariyyah (Al-Umariyyatayn) case:
-        // Spouse + Mother + Father, no children/descendants, and less than 2 siblings.
+        // Al-Umariyyatayn (المسألتان العمريتان / الغراوان): Spouse + Mother + Father, no children, <2 siblings
         const isUmariyyah = !hasChildren && siblingCount < 2 && heirs['FATHER'] && !heirs['FATHER'].is_blocked && (heirs['HUSBAND'] || heirs['WIFE']);
 
         if (isUmariyyah) {
@@ -46,20 +80,22 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
             const spouseName = heirs[spouseKey].displayName;
             const share = remaining.mul(new Fraction(1, 3));
             results['MOTHER'] = { share, count: 1 };
-            explanations['MOTHER'] = `ترث الأم ثلث الباقي بعد نصيب ${spouseName} (المسألة العمرية / الغراوية) لعدم وجود فرع وارث ولانفراد الأب معها ومع أحد الزوجين، حيث قضى بذلك عمر بن الخطاب رضي الله عنه تطبيقاً لقاعدة (للذكر مثل حظ الأنثيين) بين الأبوين.`;
+            explanations['MOTHER'] = `ترث الأم ثلث الباقي بعد نصيب ${spouseName} (المسألة العمرية / الغراوية) لعدم وجود فرع وارث ولانفراد الأب معها ومع أحد الزوجين، تطبيقاً لقضاء عمر بن الخطاب والصحابة رضي الله عنهم.`;
             remaining = remaining.sub(share);
         } else {
             const useOneSixth = hasChildren || has2OrMoreSiblings;
             const share = useOneSixth ? new Fraction(1, 6) : new Fraction(1, 3);
             results['MOTHER'] = { share, count: 1 };
             explanations['MOTHER'] = useOneSixth
-                ? `ترث الأم السدس (1/6) فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ])' : 'لوجود جمع من الإخوة للمتوفى (اثنان فأكثر من أي جهة كانوا، لقوله تعالى: [فَإِنْ كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ])'}.`
+                ? `ترث الأم السدس (1/6) فرضاً ${hasChildren ? 'لوجود فرع وارث للمتوفى (لقوله تعالى: [وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِنْ كَانَ لَهُ وَلَدٌ])' : 'لوجود جمع من الإخوة للمتوفى (اثنان فأكثر، لقوله تعالى: [فَإِنْ كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ])'}.`
                 : `ترث الأم الثلث (1/3) فرضاً لعدم وجود فرع وارث للمتوفى وعدم وجود جمع من الإخوة، لقوله تعالى: [فَإِنْ لَمْ يَكُنْ لَهُ وَلَدٌ وَوَرِثَهُ أَبَوَاهُ فَلِأُمِّهِ الثُّلُثُ].`;
             remaining = remaining.sub(share);
         }
     }
 
-    // --- 4. Father (Fixed share portion) ---
+    // =========================================================================
+    // 4. Father (الأب) - Fixed Share Portion
+    // =========================================================================
     if (heirs['FATHER'] && !heirs['FATHER'].is_blocked) {
         if (hasChildren) {
             const share = new Fraction(1, 6);
@@ -71,8 +107,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         }
     }
 
-    // --- 5. Grandfather (Fixed share portion, if not sharing with siblings) ---
-    // Check if grandfather is active and not doing a sibling division
+    // =========================================================================
+    // 5. Grandfather (الجد لأب) - Fixed Share Portion
+    // =========================================================================
     const activeGFKey = ['PATERNAL_GRANDFATHER', 'PATERNAL_GREAT_GRANDFATHER'].find(r => heirs[r] && !heirs[r].is_blocked);
     const activeSiblingsExist = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER']
         .some(rel => heirs[rel] && !heirs[rel].is_blocked);
@@ -88,8 +125,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         }
     }
 
-    // --- 6. Daughter ---
-    // Inherits as fixed share only if no son is present (otherwise she is Asabah)
+    // =========================================================================
+    // 6. Daughters (البنات الصلبيات)
+    // =========================================================================
     if (heirs['DAUGHTER'] && !heirs['DAUGHTER'].is_blocked && !(heirs['SON'] && !heirs['SON'].is_blocked)) {
         const count = heirs['DAUGHTER'].count;
         const share = count === 1 ? new Fraction(1, 2) : new Fraction(2, 3);
@@ -100,8 +138,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         remaining = remaining.sub(share);
     }
 
-    // --- 7. Granddaughter ---
-    // Inherits as fixed share only if no grandson is present
+    // =========================================================================
+    // 7. Granddaughters (بنات الابن)
+    // =========================================================================
     if (heirs['GRANDDAUGHTER'] && !heirs['GRANDDAUGHTER'].is_blocked && !(heirs['GRANDSON'] && !heirs['GRANDSON'].is_blocked)) {
         const count = heirs['GRANDDAUGHTER'].count;
         const daughterCount = heirs['DAUGHTER'] && !heirs['DAUGHTER'].is_blocked ? heirs['DAUGHTER'].count : 0;
@@ -121,7 +160,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         }
     }
 
-    // --- 8. Great Granddaughter ---
+    // =========================================================================
+    // 8. Great-Granddaughters (بنات ابن الابن)
+    // =========================================================================
     if (heirs['GREAT_GRANDDAUGHTER'] && !heirs['GREAT_GRANDDAUGHTER'].is_blocked && !(heirs['GREAT_GRANDSON'] && !heirs['GREAT_GRANDSON'].is_blocked)) {
         const count = heirs['GREAT_GRANDDAUGHTER'].count;
         const daughterCount = heirs['DAUGHTER'] && !heirs['DAUGHTER'].is_blocked ? heirs['DAUGHTER'].count : 0;
@@ -142,8 +183,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         }
     }
 
-    // --- 9. Full Sister ---
-    // Inherits as fixed share only if no child/descendant, no father/grandfather, and no full brother
+    // =========================================================================
+    // 9. Full Sister (الأخت الشقيقة)
+    // =========================================================================
     const gfSiblings = activeGFKey && activeSiblingsExist;
     if (heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked && !hasChildren && !heirs['FATHER'] && !gfSiblings && !(heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked)) {
         const count = heirs['FULL_SISTER'].count;
@@ -155,8 +197,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         remaining = remaining.sub(share);
     }
 
-    // --- 10. Paternal Sister ---
-    // Inherits as fixed share only if no child/descendant, no father/grandfather, no full brother/sister (except one full sister), and no paternal brother
+    // =========================================================================
+    // 10. Paternal Sister (الأخت لأب)
+    // =========================================================================
     const hasFullBrother = heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked;
     const hasPaternalBrother = heirs['PATERNAL_BROTHER'] && !heirs['PATERNAL_BROTHER'].is_blocked;
     const fullSisterCount = heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked ? heirs['FULL_SISTER'].count : 0;
@@ -178,8 +221,9 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
         }
     }
 
-    // --- 11. Maternal Siblings ---
-    // Inherit only if no children/descendants and no male ascendants (Father, Grandfather)
+    // =========================================================================
+    // 11. Maternal Siblings (الإخوة والأخوات لأم)
+    // =========================================================================
     const hasMaleAscendant = heirs['FATHER'] || activeGFKey;
     if (!hasChildren && !hasMaleAscendant) {
         const mBrothers = heirs['MATERNAL_BROTHER'] && !heirs['MATERNAL_BROTHER'].is_blocked ? heirs['MATERNAL_BROTHER'].count : 0;
@@ -198,7 +242,6 @@ export function calculateFixedShares(heirs, results, explanations, remaining) {
                         share = oneSixth;
                         explanations[rel] = `يرث الأخ/الأخت لأم السدس (1/6) فرضاً لانفراده وعدم وجود فرع وارث ولا أصل ذكر وارث (كلالة)، لقوله تعالى: [وَلهُ أَخٌ أَوْ أُخْتٌ فَلِكُلِّ وَاحِدٍ مِنْهُمَا السُّدُسُ].`;
                     } else {
-                        // Shared equally between males and females: share = (1/3) * (count / totalMaternal)
                         share = oneThird.mul(new Fraction(count, totalMaternal));
                         explanations[rel] = `يرث الإخوة لأم الثلث (1/3) فرضاً يشتركون فيه بالتساوي (للذكر مثل الأنثى) لتعددهم وعدم وجود فرع وارث ولا أصل ذكر وارث، لقوله تعالى: [فَهُمْ شُرَكَاءُ فِي الثُّلُثِ].`;
                     }

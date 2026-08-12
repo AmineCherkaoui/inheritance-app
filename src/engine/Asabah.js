@@ -1,12 +1,43 @@
+/**
+ * @file Asabah.js
+ * @description Distributes the estate residue (الباقي تعصيباً) to agnatic heirs (العصبات).
+ * Covers Asabah bi-nafs (عصبة بالنفس), Asabah bi-ghayr (عصبة بالغير), and Asabah ma'a ghayr (عصبة مع الغير).
+ */
+
 import Fraction from '../fraction.js';
 import { hasFemaleDescendants, hasMaleDescendants, hasFather, hasGrandfather } from './Helpers.js';
 
+/**
+ * Distributes the remainder of the estate to the closest eligible residuary heir(s) in priority order.
+ * 
+ * Order of Agnatic Classes (جهات العصبة):
+ * 1. Descendants (جهة البنوة): Son + Daughter (2:1), Grandson + Granddaughter (2:1), Great-Grandson + Great-Granddaughter (2:1).
+ * 2. Ascendants (جهة الأبوة): Father, Grandfathers.
+ * 3. Siblings and their descendants (جهة الأخوة وبنوهم):
+ *    - Sisters with female descendants (الأخوات مع البنات عصبة مع الغير).
+ *    - Full Brother + Full Sister (2:1).
+ *    - Paternal Brother + Paternal Sister (2:1).
+ *    - Full Nephew, Paternal Nephew, Great Nephews.
+ * 4. Paternal Uncles and their descendants (جهة العمومة وبنوهم):
+ *    - Full Uncle, Paternal Uncle, Full Cousin, Paternal Cousin, Great Cousins, Father's Uncles, Father's Cousins.
+ * 
+ * @param {import('./Helpers.js').HeirMap} heirs - Active heirs map.
+ * @param {Object.<string, {share: Fraction, count: number}>} results - Distribution results dictionary.
+ * @param {Object.<string, string>} explanations - Legal reasons dictionary.
+ * @param {Fraction} remaining - Remaining fraction after fixed shares.
+ * @returns {void}
+ */
 export function distributeResidue(heirs, results, explanations, remaining) {
     if (remaining.lessThan(0) || remaining.equals(0)) {
         return;
     }
 
-    // --- Helper to assign residue to a relative ---
+    /**
+     * Helper to allocate residue to an heir relationship and record the reason.
+     * @param {string} key - Relationship code.
+     * @param {Fraction} value - Fraction of residue assigned.
+     * @param {string} desc - Legal explanation text.
+     */
     const addResidue = (key, value, desc) => {
         if (!results[key]) {
             results[key] = { share: value, count: heirs[key].count || 1 };
@@ -16,7 +47,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         explanations[key] = desc;
     };
 
-    // --- 1. Children (Son + Daughter) ---
+    // =========================================================================
+    // 1. Children (الابن والبنت الصلبية)
+    // =========================================================================
     if (heirs['SON'] && !heirs['SON'].is_blocked) {
         const sonCount = heirs['SON'].count;
         const daughterCount = heirs['DAUGHTER'] && !heirs['DAUGHTER'].is_blocked ? heirs['DAUGHTER'].count : 0;
@@ -32,7 +65,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 2. Grandsons (Grandson + Granddaughter) ---
+    // =========================================================================
+    // 2. Grandsons (ابن الابن وبنت الابن)
+    // =========================================================================
     if (heirs['GRANDSON'] && !heirs['GRANDSON'].is_blocked) {
         const grandsonCount = heirs['GRANDSON'].count;
         const granddaughterCount = heirs['GRANDDAUGHTER'] && !heirs['GRANDDAUGHTER'].is_blocked ? heirs['GRANDDAUGHTER'].count : 0;
@@ -48,7 +83,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 3. Great Grandsons (Great Grandson + Great Granddaughter) ---
+    // =========================================================================
+    // 3. Great Grandsons (ابن ابن الابن وبنت ابن الابن)
+    // =========================================================================
     if (heirs['GREAT_GRANDSON'] && !heirs['GREAT_GRANDSON'].is_blocked) {
         const count = heirs['GREAT_GRANDSON'].count;
         const femaleCount = heirs['GREAT_GRANDDAUGHTER'] && !heirs['GREAT_GRANDDAUGHTER'].is_blocked ? heirs['GREAT_GRANDDAUGHTER'].count : 0;
@@ -64,7 +101,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 4. Father ---
+    // =========================================================================
+    // 4. Father (الأب)
+    // =========================================================================
     if (heirs['FATHER'] && !heirs['FATHER'].is_blocked) {
         const hasFemaleDesc = hasFemaleDescendants(heirs) && !hasMaleDescendants(heirs);
         if (hasFemaleDesc) {
@@ -75,7 +114,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 5. Grandfathers (if not sharing with siblings) ---
+    // =========================================================================
+    // 5. Grandfathers (الجد لأب عند عدم مقاسمة الإخوة)
+    // =========================================================================
     const activeGFKey = ['PATERNAL_GRANDFATHER', 'PATERNAL_GREAT_GRANDFATHER'].find(r => heirs[r] && !heirs[r].is_blocked);
     const activeSiblingsExist = ['FULL_BROTHER', 'FULL_SISTER', 'PATERNAL_BROTHER', 'PATERNAL_SISTER']
         .some(rel => heirs[rel] && !heirs[rel].is_blocked);
@@ -91,26 +132,30 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 6. Sisters as Asabah with Others (العصبة مع الغير) ---
-    // If a full sister became Asabah with others (due to female descendants)
+    // =========================================================================
+    // 6. Sisters as Asabah with Others (العصبة مع الغير)
+    // =========================================================================
     const noMaleDescendantOrFatherOrGF = !hasMaleDescendants(heirs) && !hasFather(heirs) && !hasGrandfather(heirs);
     const hasDaughtersOrGranddaughters = hasFemaleDescendants(heirs);
-    
+
+    // Full Sister with female descendants
     if (heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked && hasDaughtersOrGranddaughters && noMaleDescendantOrFatherOrGF) {
         addResidue('FULL_SISTER', remaining, `ترث الأخت الشقيقة الباقي تعصيباً مع الغير لوجود البنات أو بنات الابن وعدم وجود الأخ الشقيق أو الأب.`);
         return;
     }
 
-    // If a paternal sister became Asabah with others
+    // Paternal Sister with female descendants
     const noFullBrother = !(heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked);
     const noFullSisterAsabah = !(heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked);
-    
+
     if (heirs['PATERNAL_SISTER'] && !heirs['PATERNAL_SISTER'].is_blocked && hasDaughtersOrGranddaughters && noMaleDescendantOrFatherOrGF && noFullBrother && noFullSisterAsabah) {
         addResidue('PATERNAL_SISTER', remaining, `ترث الأخت لأب الباقي تعصيباً مع الغير لوجود البنات وعدم وجود عاصب أقرب.`);
         return;
     }
 
-    // --- 7. Full Siblings (Brother + Sister) ---
+    // =========================================================================
+    // 7. Full Siblings (الأخ الشقيق والأخت الشقيقة)
+    // =========================================================================
     if (heirs['FULL_BROTHER'] && !heirs['FULL_BROTHER'].is_blocked) {
         const brotherCount = heirs['FULL_BROTHER'].count;
         const sisterCount = heirs['FULL_SISTER'] && !heirs['FULL_SISTER'].is_blocked ? heirs['FULL_SISTER'].count : 0;
@@ -126,7 +171,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 8. Paternal Siblings (Brother + Sister) ---
+    // =========================================================================
+    // 8. Paternal Siblings (الأخ لأب والأخت لأب)
+    // =========================================================================
     if (heirs['PATERNAL_BROTHER'] && !heirs['PATERNAL_BROTHER'].is_blocked) {
         const brotherCount = heirs['PATERNAL_BROTHER'].count;
         const sisterCount = heirs['PATERNAL_SISTER'] && !heirs['PATERNAL_SISTER'].is_blocked ? heirs['PATERNAL_SISTER'].count : 0;
@@ -142,7 +189,9 @@ export function distributeResidue(heirs, results, explanations, remaining) {
         return;
     }
 
-    // --- 9. Other Fallbacks in priority order ---
+    // =========================================================================
+    // 9. Other Agnatic Fallbacks in strict priority order (باقي العصبات بالنفس)
+    // =========================================================================
     const fallbackRels = [
         'NEPHEW_FULL', 'NEPHEW_PATERNAL',
         'GREAT_NEPHEW_FULL', 'GREAT_NEPHEW_PATERNAL',

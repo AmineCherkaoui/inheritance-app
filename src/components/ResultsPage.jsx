@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from 'react-router';
 import {
   Scale, ShieldAlert, Award, FileText, CheckCircle,
   TrendingDown, TrendingUp, Users, Minus,
-  ScrollText, AlertTriangle, Banknote, ArrowRight, PieChart as PieIcon, BarChart3, Share2
+  ScrollText, AlertTriangle, Banknote, ArrowRight, PieChart as PieIcon, BarChart3, Share2,
+  ChevronLeft, Sparkles, BookOpenCheck, ArrowLeft
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { serializeState, deserializeState, renderExplanationWithQuranFont } from '../utils';
@@ -13,12 +14,11 @@ import { InheritanceCalculator } from '../engine';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from './PdfReport';
 import { exportExcelReport } from './ExcelReport';
+import DetailedCalculationDrawer from './DetailedCalculationDrawer';
 
 function formatCurrency(value) {
   return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' د.م.';
 }
-
-
 
 function BreakdownStep({ icon: Icon, iconColor, label, value, valueColor = 'text-foreground', operation, highlight }) {
   return (
@@ -92,6 +92,7 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   let result = location.state?.result;
 
@@ -116,7 +117,8 @@ export default function ResultsPage() {
             debts: parseFloat(state.debts) || 0,
             heirs: heirsList,
             wills: state.wills || [],
-            heirsApprovedExcess: state.heirsApprovedExcess || false
+            heirsApprovedExcess: state.heirsApprovedExcess || false,
+            mandatoryBequests: state.mandatoryBequests || []
           };
           const calculator = new InheritanceCalculator(caseData);
           result = calculator.calculate();
@@ -146,7 +148,7 @@ export default function ResultsPage() {
 
     const heirs = {};
     for (const dist of (result.distributions || [])) {
-      if (dist.share_fraction !== "0") {
+      if (dist.share_fraction !== "0" && !dist.relationship.startsWith('MANDATORY_WILL_') && !dist.relationship.startsWith('WILL_')) {
         heirs[dist.relationship] = dist.count;
       }
     }
@@ -162,7 +164,8 @@ export default function ResultsPage() {
       debts: result.deductions,
       heirs,
       wills,
-      heirsApprovedExcess: !result.is_wills_scaled
+      heirsApprovedExcess: !result.is_wills_scaled,
+      mandatoryBequests: result.mandatory_bequests || []
     };
     const code = serializeState(state);
     return `${window.location.origin}/results?s=${code}`;
@@ -247,6 +250,8 @@ export default function ResultsPage() {
     );
   }
 
+  const displayNetEstate = result.original_net_estate - (result.total_wills_cost || 0);
+
   // Common denominator scaled list
   const allFormatted = getCommonDenominatorFractions(result.distributions || []);
   const heirsDistributions = allFormatted.filter(d => !d.relationship.startsWith('WILL_'));
@@ -260,7 +265,7 @@ export default function ResultsPage() {
   }));
 
   const estateAllocationData = [
-    { name: 'صافي الورثة', value: result.net_estate, percentage: (result.net_estate / result.total_estate) * 100 }
+    { name: 'صافي الورثة', value: displayNetEstate, percentage: (displayNetEstate / result.total_estate) * 100 }
   ];
   if (result.total_wills_cost > 0) {
     estateAllocationData.push({ name: 'الوصايا المنفذة', value: result.total_wills_cost, percentage: (result.total_wills_cost / result.total_estate) * 100 });
@@ -273,6 +278,9 @@ export default function ResultsPage() {
   const ALLOC_COLORS = ['#b5893d', '#8b5cf6', '#ef4444'];
 
   const hasWillsOrDebts = result.total_wills_cost > 0 || result.deductions > 0;
+  const isMandatory = result.mandatory_bequest_steps && result.mandatory_bequest_steps.length > 0;
+  const stepsCount = isMandatory ? result.mandatory_bequest_steps.length : (result.standard_steps?.length || 3);
+  const hasRadd = !result.is_aul && (result.distributions || []).some(d => d.why && d.why.includes('ردت المسألة'));
 
   return (
     <div className="min-h-screen bg-background pb-16 pt-8 px-4 sm:px-6 lg:px-8" dir="rtl">
@@ -280,24 +288,24 @@ export default function ResultsPage() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="container mx-auto mb-8 flex items-center gap-4 bg-white/90 p-4 rounded-3xl border border-default-150/40 backdrop-blur-xs"
+        className="container mx-auto mb-8 flex items-center gap-4 bg-white/90 p-4 sm:p-5 rounded-3xl border border-default-150/40 backdrop-blur-md shadow-xs"
       >
-      {location.state?.from && (
-        <Button
-          variant="outline"
-          isIconOnly
-          onPress={handleBack}
-          className="rounded-2xl border-default-250 shrink-0 bg-white shadow-3xs"
-          aria-label="الرجوع"
-        >
-          <ArrowRight size={18} />
-        </Button>
-      )}
+        {location.state?.from && (
+          <Button
+            variant="outline"
+            isIconOnly
+            onPress={handleBack}
+            className="rounded-2xl border-default-250 shrink-0 bg-white shadow-3xs hover:bg-default-50 transition-colors"
+            aria-label="الرجوع"
+          >
+            <ArrowRight size={18} />
+          </Button>
+        )}
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-            <Scale size={22} className="text-amber-600" /> تفاصيل توزيع التركة
+            <Scale size={22} className="text-amber-600 shrink-0" /> تفاصيل توزيع التركة
           </h1>
-          <p className="text-[10px] sm:text-xs text-muted-foreground">توزيع شرعي مبني على الشريعة الإسلامية وقانون الأسرة</p>
+          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">توزيع شرعي مبني على الشريعة الإسلامية وقانون الأسرة</p>
         </div>
       </motion.div>
 
@@ -327,18 +335,18 @@ export default function ResultsPage() {
                   <span className="text-xs font-black text-muted-foreground mb-3 text-center">تقسيم التركة الإجمالية</span>
                   <div className="relative h-60 w-full flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                         <Pie
                           data={estateAllocationData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={4}
+                          innerRadius="48%"
+                          outerRadius="72%"
+                          paddingAngle={estateAllocationData.length > 1 ? 4 : 0}
                           dataKey="value"
                         >
                           {estateAllocationData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={ALLOC_COLORS[index % ALLOC_COLORS.length]} className="stroke-white stroke-2 focus:outline-hidden" />
+                            <Cell key={`cell-${index}`} fill={ALLOC_COLORS[index % ALLOC_COLORS.length]} stroke={estateAllocationData.length > 1 ? "#ffffff" : "none"} strokeWidth={estateAllocationData.length > 1 ? 2 : 0} className="focus:outline-hidden" />
                           ))}
                         </Pie>
                         <Tooltip
@@ -371,18 +379,18 @@ export default function ResultsPage() {
                   <span className="text-xs font-black text-muted-foreground mb-3 text-center">توزيع أنصبة الورثة (العائلة)</span>
                   <div className="relative h-60 w-full flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                         <Pie
                           data={familyPieData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={4}
+                          innerRadius="48%"
+                          outerRadius="72%"
+                          paddingAngle={familyPieData.length > 1 ? 4 : 0}
                           dataKey="value"
                         >
                           {familyPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="stroke-white stroke-2 focus:outline-hidden" />
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={familyPieData.length > 1 ? "#ffffff" : "none"} strokeWidth={familyPieData.length > 1 ? 2 : 0} className="focus:outline-hidden" />
                           ))}
                         </Pie>
                         <Tooltip
@@ -393,8 +401,8 @@ export default function ResultsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center bg-white/95 w-22 h-22 rounded-full border border-default-100 z-0">
-                      <span className="text-[7px] font-black text-muted-foreground uppercase">صافي الورثة</span>
-                      <span className="text-[10px] font-extrabold text-amber-700 font-mono mt-0.5">{formatCurrency(result.net_estate)}</span>
+                      <span className="text-[7px] font-black text-muted-foreground uppercase">صافي التركة للورثة</span>
+                      <span className="text-[10px] font-extrabold text-amber-700 font-mono mt-0.5">{formatCurrency(displayNetEstate)}</span>
                     </div>
                   </div>
 
@@ -412,22 +420,22 @@ export default function ResultsPage() {
               </div>
             ) : (
               /* Center only Family Shares Chart if no wills and no debts */
-              <div className="max-w-md mx-auto flex flex-col items-center">
+              <div className="w-full max-w-md mx-auto flex flex-col items-center">
                 <span className="text-xs font-black text-muted-foreground mb-3 text-center">توزيع أنصبة الورثة (العائلة)</span>
-                <div className="relative h-64 w-full flex items-center justify-center">
+                <div className="relative h-60 w-full max-w-65 mx-auto flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <Pie
                         data={familyPieData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={55}
-                        outerRadius={80}
-                        paddingAngle={4}
+                        innerRadius="48%"
+                        outerRadius="72%"
+                        paddingAngle={familyPieData.length > 1 ? 4 : 0}
                         dataKey="value"
                       >
                         {familyPieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="stroke-white stroke-2 focus:outline-hidden" />
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={familyPieData.length > 1 ? "#ffffff" : "none"} strokeWidth={familyPieData.length > 1 ? 2 : 0} className="focus:outline-hidden" />
                         ))}
                       </Pie>
                       <Tooltip
@@ -438,8 +446,8 @@ export default function ResultsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center bg-white/95 w-24 h-24 rounded-full border border-default-100 z-0">
-                    <span className="text-[7px] font-black text-muted-foreground uppercase">صافي الورثة</span>
-                    <span className="text-[11px] font-extrabold text-amber-700 font-mono mt-0.5">{formatCurrency(result.net_estate)}</span>
+                    <span className="text-[7px] font-black text-muted-foreground uppercase">صافي التركة للورثة</span>
+                    <span className="text-[11px] font-extrabold text-amber-700 font-mono mt-0.5">{formatCurrency(displayNetEstate)}</span>
                   </div>
                 </div>
 
@@ -515,19 +523,6 @@ export default function ResultsPage() {
                 <FileText size={16} className="text-purple-600" /> الوصايا الشرعية المنفذة
               </h3>
 
-              {result.wills_explanation && (
-                <div className={`flex items-start gap-2.5 p-3.5 mb-4 rounded-xl text-xs leading-relaxed border ${result.is_wills_scaled
-                  ? 'bg-orange-50/60 border-orange-200/50 text-orange-850'
-                  : 'bg-emerald-50/60 border-emerald-200/50 text-emerald-850'
-                  }`}>
-                  {result.is_wills_scaled
-                    ? <AlertTriangle size={15} className="text-orange-550 shrink-0 mt-0.5" />
-                    : <CheckCircle size={15} className="text-emerald-550 shrink-0 mt-0.5" />
-                  }
-                  <span className="font-bold">{result.wills_explanation}</span>
-                </div>
-              )}
-
               <div className="overflow-x-auto border border-default-100 rounded-2xl">
                 <table className="w-full border-collapse text-right">
                   <thead>
@@ -565,89 +560,44 @@ export default function ResultsPage() {
             </Card>
           )}
 
-          {/* Table Card 3: Blocked Heirs */}
-          {blockedHeirs.length > 0 && (
-            <Card className="bg-default-50 rounded-2xl p-5 border border-default-200">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-3">
-                الورثة المحجوبون
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {blockedHeirs.map((dist, idx) => (
-                  <div key={idx} className="bg-white border border-default-150 p-3 rounded-xl flex gap-2.5 items-start">
-                    <Minus size={14} className="text-red-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="text-xs font-bold text-foreground">{dist.relationship_display}</span>
-                      {dist.count > 1 && <span className="text-[10px] text-muted-foreground mr-1">({dist.count})</span>}
-                      {dist.why && <span className="block text-[10px] text-muted-foreground mt-0.5">{renderExplanationWithQuranFont(dist.why)}</span>}
-                    </div>
-                  </div>
-                ))}
+          {/* Simple & Flat Calculation Steps Trigger Card */}
+          <div
+            onClick={() => setIsDrawerOpen(true)}
+            className="rounded-2xl border border-default-200 bg-white hover:bg-default-50/80 p-4 sm:p-5 transition-all duration-150 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full text-right"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/60">
+                <ScrollText size={20} />
               </div>
-            </Card>
-          )}
-
-          {/* Table Card 4: Explanations section */}
-          <Card className="rounded-3xl border border-default-200 bg-white p-6 shadow-sm">
-            <span className="text-sm font-black flex items-center gap-2 mb-4 text-foreground">
-              <Award size={16} className="text-amber-600" /> تفاصيل وتوجيه الأنصبة والوصايا
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(result.distributions || []).map((dist, idx) => {
-                const isActive = dist.percentage > 0;
-                const isWill = dist.relationship.startsWith('WILL_');
-                const activeHeirIdx = heirsDistributions.findIndex(h => h.relationship === dist.relationship);
-                const circleColor = isWill 
-                  ? '#8b5cf6' 
-                  : (activeHeirIdx !== -1 ? COLORS[activeHeirIdx % COLORS.length] : '#f87171');
-
-                return (
-                  <div key={idx} className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between gap-3 ${
-                    isActive 
-                      ? 'bg-default-50/50 border-default-150/60 hover:border-amber-250 hover:bg-amber-50/5 shadow-2xs' 
-                      : 'bg-red-50/20 border-red-100 text-muted-foreground'
-                  }`}>
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: circleColor }} />
-                          <span className="text-xs sm:text-sm font-black text-foreground">{dist.relationship_display}</span>
-                          {dist.count !== '-' && dist.count > 1 && (
-                            <span className="text-[10px] text-muted-foreground">({dist.count} أفراد)</span>
-                          )}
-                        </div>
-                        {isActive ? (
-                          <span className="text-[10px] sm:text-xs font-black text-amber-800 font-mono bg-amber-50 border border-amber-200/50 px-2.5 py-0.5 rounded-md">
-                            {dist.share_fraction}
-                          </span>
-                        ) : (
-                          <span className="text-[9px] sm:text-[10px] font-bold text-red-650 bg-red-100/50 border border-red-250/30 px-2 py-0.5 rounded-md">
-                            محجوب
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {dist.why ? renderExplanationWithQuranFont(dist.why) : 'تم التخصيص حسب الأنصبة الشرعية.'}
-                      </p>
-                    </div>
-
-                    {isActive && (
-                      <div className="flex items-center justify-between pt-2.5 border-t border-default-150/50 text-[10px] sm:text-[11px] font-semibold text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <span>النسبة:</span>
-                          <span className="font-extrabold text-foreground font-mono">%{dist.percentage.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>القيمة:</span>
-                          <span className="font-extrabold text-amber-700 font-mono">{formatCurrency(dist.total_value)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">
+                    خطوات الحل والشرح التفصيلي للمسألة
+                  </h4>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 bg-default-100 text-muted-foreground rounded-md">
+                    {stepsCount} مراحل
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  عرض الأدلة الفقهية، قواعد الحجب، تأصيل الفروض، وتصحيح الأنصبة
+                </p>
+              </div>
             </div>
-          </Card>
+
+            <Button
+              onPress={() => setIsDrawerOpen(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2 h-9 rounded-xl flex items-center gap-1.5 shrink-0 self-end sm:self-auto"
+            >
+              <span>عرض الخطوات</span>
+              <ChevronLeft size={16} />
+            </Button>
+          </div>
+
+          <DetailedCalculationDrawer
+            result={result}
+            isOpen={isDrawerOpen}
+            onOpenChange={setIsDrawerOpen}
+          />
         </div>
 
         {/* Left Side / Second Column: Estate Breakdown Summary (Sticky Sidebar) */}
@@ -701,7 +651,7 @@ export default function ResultsPage() {
                     icon={TrendingUp}
                     iconColor="bg-emerald-50 text-emerald-600"
                     label="صافي التركة للورثة"
-                    value={result.net_estate}
+                    value={displayNetEstate}
                     valueColor="text-emerald-700"
                     highlight
                   />
