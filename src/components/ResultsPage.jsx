@@ -9,7 +9,7 @@ import {
   ChevronLeft, Sparkles, BookOpenCheck, ArrowLeft
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { serializeState, deserializeState, renderExplanationWithQuranFont } from '../utils';
+import { serializeState, deserializeState, renderExplanationWithQuranFont, generateQRCodeWithLogo } from '../utils';
 import { InheritanceCalculator } from '../engine';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from './PdfReport';
@@ -206,7 +206,15 @@ export default function ResultsPage() {
     if (loadingPdf) return;
     setLoadingPdf(true);
     try {
-      const blob = await pdf(<PdfReport result={result} />).toBlob();
+      const shareUrl = getShareLink();
+      const qrCodeDataUrl = await generateQRCodeWithLogo(shareUrl);
+      const blob = await pdf(
+        <PdfReport
+          result={result}
+          shareUrl={shareUrl}
+          qrCodeDataUrl={qrCodeDataUrl}
+        />
+      ).toBlob();
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {
@@ -329,7 +337,7 @@ export default function ResultsPage() {
             </h3>
 
             {hasWillsOrDebts ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2  gap-8">
                 {/* Chart 1: Total Estate Allocation */}
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-black text-muted-foreground mb-3 text-center">تقسيم التركة الإجمالية</span>
@@ -407,7 +415,7 @@ export default function ResultsPage() {
                   </div>
 
                   {/* Custom HTML Legend */}
-                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 mt-4 max-w-xs">
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 mt-4">
                     {familyPieData.map((entry, index) => (
                       <div key={index} className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground/80">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />

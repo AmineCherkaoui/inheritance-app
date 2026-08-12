@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#b5893d" stroke-width="3" />
+  <circle cx="50" cy="50" r="43" fill="#fefdfb" />
+  <!-- Scales of Justice Icon (ميزان الفرائض) -->
+  <g fill="none" stroke="#b5893d" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(18, 18) scale(0.64)">
+    <path d="M50 12 v76" />
+    <path d="M30 88 h40" />
+    <path d="M15 28 h70" />
+    <circle cx="50" cy="12" r="3.5" fill="#b5893d" />
+    <!-- Left pan -->
+    <path d="M15 28 L5 56 h20 Z" fill="#b5893d" fill-opacity="0.15" />
+    <path d="M5 56 Q15 64 25 56" />
+    <!-- Right pan -->
+    <path d="M85 28 L75 56 h20 Z" fill="#b5893d" fill-opacity="0.15" />
+    <path d="M75 56 Q85 64 95 56" />
+  </g>
+</svg>

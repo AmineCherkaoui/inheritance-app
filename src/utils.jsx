@@ -180,3 +180,68 @@ export const renderExplanationWithQuranFont = (text) => {
   });
 };
 
+export const generateQRCodeWithLogo = async (text) => {
+  if (!text) return '';
+  try {
+    const QRCodeModule = await import('qrcode');
+    const QRCode = QRCodeModule.default || QRCodeModule;
+    const size = 360;
+
+    if (typeof document !== 'undefined' && document.createElement) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      await QRCode.toCanvas(canvas, text, {
+        width: size,
+        margin: 2,
+        errorCorrectionLevel: 'H',
+        color: {
+          dark: '#1e293b',
+          light: '#ffffff'
+        }
+      });
+
+      const ctx = canvas.getContext('2d');
+      const logo = new window.Image();
+      logo.crossOrigin = 'anonymous';
+      logo.src = '/icon.svg';
+
+      await new Promise((resolve) => {
+        logo.onload = () => {
+          const logoSize = size * 0.24;
+          const pos = (size - logoSize) / 2;
+
+          ctx.save();
+          // Draw white circular background for logo with amber border
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, (logoSize / 2) + 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#b5893d';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Draw the centered icon
+          ctx.drawImage(logo, pos, pos, logoSize, logoSize);
+          ctx.restore();
+          resolve();
+        };
+        logo.onerror = () => resolve();
+      });
+
+      return canvas.toDataURL('image/png');
+    }
+
+    return await QRCode.toDataURL(text, {
+      width: size,
+      margin: 2,
+      errorCorrectionLevel: 'H'
+    });
+  } catch (err) {
+    console.error('Failed to generate QR code with logo:', err);
+    return '';
+  }
+};
+
