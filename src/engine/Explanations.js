@@ -61,3 +61,40 @@ export function formatExplanation(whyText, gender) {
     }
     return whyText;
 }
+
+/**
+ * Returns parent branch designation string, using custom name if provided.
+ * @param {Object} mb - Mandatory bequest input item.
+ * @param {number} index - Default 1-based index.
+ * @returns {string} e.g. "(من الابن المتوفى أحمد)" or "(من الابن المتوفى #1)"
+ */
+export function getParentDesignation(mb, index) {
+    if (!mb) return '';
+    if (mb.name && mb.name.trim()) {
+        const name = mb.name.trim();
+        if (name.startsWith('من ') || name.startsWith('الابن') || name.startsWith('البنت')) {
+            return `(${name.startsWith('من ') ? name : 'من ' + name})`;
+        }
+        return mb.type === 'son' ? `(من الابن المتوفى ${name})` : `(من البنت المتوفية ${name})`;
+    }
+    return mb.type === 'son' ? `(من الابن المتوفى #${index})` : `(من البنت المتوفية #${index})`;
+}
+
+/**
+ * Returns parent branch label without parentheses, using custom name if provided.
+ * @param {Object} mb - Mandatory bequest input item.
+ * @param {number} index - Default 1-based index.
+ * @returns {string} e.g. "الابن المتوفى أحمد" or "الابن المتوفى #1"
+ */
+export function getParentLabel(mb, index) {
+    if (!mb) return '';
+    if (mb.name && mb.name.trim()) {
+        const name = mb.name.trim();
+        if (name.startsWith('الابن') || name.startsWith('البنت')) {
+            return name;
+        }
+        return mb.type === 'son' ? `الابن المتوفى ${name}` : `البنت المتوفية ${name}`;
+    }
+    return mb.type === 'son' ? `الابن المتوفى #${index}` : `البنت المتوفية #${index}`;
+}
+

@@ -51,10 +51,22 @@ export default function MandatoryBequestForm({
             >
               {mandatoryBequests.map((mb, idx) => (
                 <div key={mb.id} className="flex flex-col gap-3 rounded-2xl p-4 border border-default-100 bg-default-50/50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-amber-900">
-                      {mb.type === 'son' ? `أولاد ابن متوفى #${idx + 1}` : `أولاد بنت متوفية #${idx + 1}`}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-default-200/60">
+                    <div className="flex items-center gap-2 flex-1 max-w-sm">
+                      <span className="text-xs font-bold text-amber-900 shrink-0">
+                        {mb.type === 'son' ? 'اسم الابن المتوفى:' : 'اسم البنت المتوفية:'}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder={mb.type === 'son' ? `الابن المتوفى #${idx + 1}` : `البنت المتوفية #${idx + 1}`}
+                        value={mb.name || ''}
+                        onChange={(e) => {
+                          const updated = mandatoryBequests.map(item => item.id === mb.id ? { ...item, name: e.target.value } : item);
+                          setMandatoryBequests(updated);
+                        }}
+                        className="text-xs bg-white border border-default-250 rounded-xl px-2.5 py-1 text-foreground placeholder:text-muted-foreground/50 focus:outline-hidden focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 font-semibold transition-all w-full shadow-3xs"
+                      />
+                    </div>
                     <Button
                       variant="danger-soft"
                       size="sm"
@@ -66,6 +78,7 @@ export default function MandatoryBequestForm({
                           setHasMandatoryBequest(false);
                         }
                       }}
+                      className="rounded-xl shrink-0"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -294,7 +307,7 @@ export default function MandatoryBequestForm({
                   size="sm"
                   variant="outline"
                   className="flex-1 font-bold border-amber-600/30 text-amber-700 hover:bg-amber-50/50"
-                  onPress={() => setMandatoryBequests([...mandatoryBequests, { id: `mb-${Date.now()}-${Math.random()}`, type: 'son', sonsCount: 0, daughtersCount: 0, greatSonsCount: 0, greatDaughtersCount: 0, motherAlive: true, spouseAlive: true, greatSpouseAlive: true }])}
+                  onPress={() => setMandatoryBequests([...mandatoryBequests, { id: `mb-${Date.now()}-${Math.random()}`, name: '', type: 'son', sonsCount: 0, daughtersCount: 0, greatSonsCount: 0, greatDaughtersCount: 0, motherAlive: true, spouseAlive: true, greatSpouseAlive: true }])}
                 >
                   <Plus size={14} /> أولاد ابن متوفى
                 </Button>
@@ -302,7 +315,7 @@ export default function MandatoryBequestForm({
                   size="sm"
                   variant="outline"
                   className="flex-1 font-bold border-amber-600/30 text-amber-700 hover:bg-amber-50/50"
-                  onPress={() => setMandatoryBequests([...mandatoryBequests, { id: `mb-${Date.now()}-${Math.random()}`, type: 'daughter', sonsCount: 0, daughtersCount: 0, motherAlive: true, spouseAlive: true }])}
+                  onPress={() => setMandatoryBequests([...mandatoryBequests, { id: `mb-${Date.now()}-${Math.random()}`, name: '', type: 'daughter', sonsCount: 0, daughtersCount: 0, motherAlive: true, spouseAlive: true }])}
                 >
                   <Plus size={14} /> أولاد بنت متوفية
                 </Button>

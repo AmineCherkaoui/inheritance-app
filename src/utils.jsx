@@ -75,17 +75,21 @@ export const serializeState = (state) => {
     }
 
     if (state.mandatoryBequests && state.mandatoryBequests.length > 0) {
-      compact.mb = state.mandatoryBequests.map(item => ({
-        t: item.type === 'son' ? 's' : 'd',
-        s: item.sonsCount,
-        d: item.daughtersCount,
-        gs: item.greatSonsCount,
-        gd: item.greatDaughtersCount,
-        ma: item.motherAlive !== false ? 1 : 0,
-        sa: item.spouseAlive !== false ? 1 : 0,
-        gsa: item.greatSpouseAlive === true ? 1 : 0,
-        i: item.id
-      }));
+      compact.mb = state.mandatoryBequests.map(item => {
+        const o = {
+          t: item.type === 'son' ? 's' : 'd',
+          s: item.sonsCount,
+          d: item.daughtersCount,
+          gs: item.greatSonsCount,
+          gd: item.greatDaughtersCount,
+          ma: item.motherAlive !== false ? 1 : 0,
+          sa: item.spouseAlive !== false ? 1 : 0,
+          gsa: item.greatSpouseAlive === true ? 1 : 0,
+          i: item.id
+        };
+        if (item.name) o.n = item.name;
+        return o;
+      });
     }
 
     const json = JSON.stringify(compact);
@@ -141,6 +145,7 @@ export const deserializeState = (str) => {
     if (parsed.mb) {
       state.mandatoryBequests = parsed.mb.map(item => ({
         id: item.i,
+        name: item.n || '',
         type: item.t === 's' ? 'son' : 'daughter',
         sonsCount: item.s,
         daughtersCount: item.d,

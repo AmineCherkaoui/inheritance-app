@@ -18,7 +18,7 @@ function formatHeirsListSummary(distributions) {
       continue;
     }
     const text = d.relationship_display;
-    const match = text.match(/(.+?)\s*\((من\s+(?:الابن\s+المتوفى|البنت\s+المتوفية)\s*#\d+)\)/);
+    const match = text.match(/(.+?)\s*\((من\s+[^)]+)\)/);
     const hasMultiple = d.count !== '-' && parseInt(d.count) > 1;
     const displaySuffix = hasMultiple ? ` (${d.count})` : '';
 
@@ -48,6 +48,16 @@ function formatHeirsListSummary(distributions) {
   return parts.join(' و ');
 }
 
+function formatRowName(name, stepId) {
+  if (!name) return '—';
+  if (stepId && stepId.startsWith('step2')) {
+    if (name.includes('ابن ابن متوفى')) return 'ابن ابن';
+    if (name.includes('ابن متوفى')) return 'ابن';
+    if (name.includes('بنت متوفاة')) return 'بنت';
+  }
+  return name;
+}
+
 export default function DetailedCalculationDrawer({ result, isOpen, onOpenChange }) {
   if (!result) return null;
 
@@ -72,7 +82,6 @@ export default function DetailedCalculationDrawer({ result, isOpen, onOpenChange
             {/* Input state summary */}
             <div className="bg-default-50 border border-default-150/40 p-4 rounded-2xl text-xs font-bold leading-relaxed text-foreground">
               مات وترك: {formatHeirsListSummary(result.distributions)}
-              {isMandatory}
             </div>
 
             {steps.map((step) => (
@@ -130,7 +139,7 @@ export default function DetailedCalculationDrawer({ result, isOpen, onOpenChange
                     <tbody className="divide-y divide-default-100">
                       {step.table.map((row, rIdx) => (
                         <tr key={rIdx} className="hover:bg-default-50/20">
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground whitespace-nowrap">{row.name}</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-foreground whitespace-nowrap">{formatRowName(row.name, step.id)}</td>
 
                           {/* Render cells based on step ID */}
                           {step.id === 'std_step1' && (
@@ -187,7 +196,7 @@ export default function DetailedCalculationDrawer({ result, isOpen, onOpenChange
                   </table>
                 </div>
                 {step.result_text && (
-                  <div className="bg-emerald-50/60 border border-emerald-200/50 text-emerald-850 p-3 rounded-xl text-xs font-bold leading-relaxed">
+                  <div className="bg-emerald-50/60 border border-emerald-200/50 text-emerald-850 p-3 rounded-xl text-xs font-bold leading-relaxed whitespace-pre-line">
                     {step.result_text}
                   </div>
                 )}

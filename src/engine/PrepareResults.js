@@ -5,7 +5,7 @@
  */
 
 import Fraction from '../fraction.js';
-import { formatExplanation } from './Explanations.js';
+import { formatExplanation, HEIR_NAMES_AR, getParentDesignation } from './Explanations.js';
 
 /**
  * @typedef {Object} WillInput
@@ -218,11 +218,6 @@ export function prepareFinalResults({
         const perPersonValue = count > 0 ? totalValue / count : 0;
 
         const heirObj = heirs[relationship];
-        let displayName = heirObj ? heirObj.displayName : relationship;
-        if (relationship === 'TREASURY') {
-            displayName = 'بيت المال';
-        }
-
         let whyText = explanations[relationship] || '';
         if (isAul) {
             whyText += ` (تم تعديل النصيب بالعول نظراً لزيادة السهام عن أصل المسألة).`;
@@ -230,18 +225,54 @@ export function prepareFinalResults({
         whyText = formatExplanation(whyText, gender);
 
         const individualShareFraction = count > 1 ? shareFraction.div(new Fraction(count)) : shareFraction;
-        distributions.push({
-            relationship,
-            relationship_display: displayName,
-            count,
-            share_fraction: shareFraction.toString(),
-            individual_share_fraction: individualShareFraction.toString(),
-            percentage: Math.round(percentage * 10000) / 10000,
-            individual_percentage: count > 1 ? Math.round((percentage / count) * 10000) / 10000 : Math.round(percentage * 10000) / 10000,
-            total_value: Math.round(totalValue * 100) / 100,
-            per_person_value: Math.round(perPersonValue * 100) / 100,
-            why: whyText
-        });
+
+        if (heirObj && heirObj.branches && heirObj.branches.length > 1) {
+            for (const b of heirObj.branches) {
+                const bCount = b.count;
+                const bShare = individualShareFraction.mul(new Fraction(bCount));
+                const bPercentage = (percentage / count) * bCount;
+                const bTotalValue = perPersonValue * bCount;
+                const nameMap = {
+                    'GRANDSON': 'ابن ابن',
+                    'GRANDDAUGHTER': 'بنت ابن',
+                    'GREAT_GRANDSON': 'ابن ابن ابن',
+                    'GREAT_GRANDDAUGHTER': 'بنت ابن ابن'
+                };
+                const baseName = nameMap[relationship] || HEIR_NAMES_AR[relationship] || relationship;
+                const bDisplayName = b.designation ? `${baseName} ${b.designation}` : baseName;
+
+                distributions.push({
+                    relationship: `${relationship}_${b.id}`,
+                    relationship_display: bDisplayName,
+                    count: bCount,
+                    share_fraction: bShare.toString(),
+                    individual_share_fraction: individualShareFraction.toString(),
+                    percentage: Math.round(bPercentage * 10000) / 10000,
+                    individual_percentage: Math.round((percentage / count) * 10000) / 10000,
+                    total_value: Math.round(bTotalValue * 100) / 100,
+                    per_person_value: Math.round(perPersonValue * 100) / 100,
+                    why: whyText
+                });
+            }
+        } else {
+            let displayName = heirObj ? heirObj.displayName : relationship;
+            if (relationship === 'TREASURY') {
+                displayName = 'بيت المال';
+            }
+
+            distributions.push({
+                relationship,
+                relationship_display: displayName,
+                count,
+                share_fraction: shareFraction.toString(),
+                individual_share_fraction: individualShareFraction.toString(),
+                percentage: Math.round(percentage * 10000) / 10000,
+                individual_percentage: count > 1 ? Math.round((percentage / count) * 10000) / 10000 : Math.round(percentage * 10000) / 10000,
+                total_value: Math.round(totalValue * 100) / 100,
+                per_person_value: Math.round(perPersonValue * 100) / 100,
+                why: whyText
+            });
+        }
     }
 
     // 2. Add Executed Mandatory Bequests (الوصية الواجبة)
@@ -253,8 +284,8 @@ export function prepareFinalResults({
             else if (mb.type === 'daughter') daughterIndex++;
 
             const parentDesignation = mb.type === 'son'
-                ? `(من الابن المتوفى #${sonIndex})`
-                : `(من البنت المتوفية #${daughterIndex})`;
+                ? getParentDesignation(mb, sonIndex)
+                : getParentDesignation(mb, daughterIndex);
 
             for (const kid of mb.kids) {
                 const pct = (kid.value / originalNetEstate) * 100;

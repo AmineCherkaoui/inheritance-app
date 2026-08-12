@@ -5,6 +5,7 @@
  */
 
 import Fraction from "../fraction.js";
+import { HEIR_NAMES_AR, getParentDesignation, getParentLabel } from "./Explanations.js";
 
 /**
  * Computes the Greatest Common Divisor of two numbers.
@@ -245,7 +246,7 @@ export function getMandatoryBequestSteps(calc, awlResult) {
     for (const mb of calc.case.mandatoryBequests) {
         if (mb.type === 'son') {
             step1SonIndex++;
-            const parentDesig = `(من الابن المتوفى #${step1SonIndex})`;
+            const parentDesig = getParentDesignation(mb, step1SonIndex);
             const totalSons = parseInt(mb.sonsCount, 10) || 0;
             const totalDaughters = parseInt(mb.daughtersCount, 10) || 0;
             const totalGreatSons = parseInt(mb.greatSonsCount, 10) || 0;
@@ -290,7 +291,7 @@ export function getMandatoryBequestSteps(calc, awlResult) {
     for (const mb of calc.case.mandatoryBequests) {
         if (mb.type === 'daughter') {
             step1DaughterIndex2++;
-            const parentDesig = `(من البنت المتوفية #${step1DaughterIndex2})`;
+            const parentDesig = getParentDesignation(mb, step1DaughterIndex2);
             const totalSons = parseInt(mb.sonsCount, 10) || 0;
             const totalDaughters = parseInt(mb.daughtersCount, 10) || 0;
             if (totalSons > 0) {
@@ -324,91 +325,146 @@ export function getMandatoryBequestSteps(calc, awlResult) {
     });
 
     // =========================================================================
-    // STEP 2: Preliminary calculation assuming deceased parent is alive
+    // STEP 2: Preliminary calculation assuming all deceased children are alive
     // =========================================================================
-    let step2SonIndex = 0;
-    let step2DaughterIndex = 0;
+    const tempHeirsMap = {};
+    for (const h of Object.values(calc.heirs)) {
+        if (!h.is_blocked && h.count > 0) {
+            tempHeirsMap[h.relationship] = h.count;
+        }
+    }
+
+    let deceasedSonsCount = 0;
+    let deceasedDaughtersCount = 0;
+    let virtualGrandsonCount = 0;
+
+    const hasLivingGrandchildrenAsHeirs = (calc.heirs['GRANDSON'] && !calc.heirs['GRANDSON'].is_blocked) ||
+        (calc.heirs['GRANDDAUGHTER'] && !calc.heirs['GRANDDAUGHTER'].is_blocked);
+
     for (const mb of calc.case.mandatoryBequests) {
-        let parentDesig = '';
-        let parentRel = '';
-        let displayName = '';
-        const hasLivingGrandchildrenAsHeirs = (calc.heirs['GRANDSON'] && !calc.heirs['GRANDSON'].is_blocked) ||
-            (calc.heirs['GRANDDAUGHTER'] && !calc.heirs['GRANDDAUGHTER'].is_blocked);
-
         if (mb.type === 'son') {
-            step2SonIndex++;
-            parentDesig = `(من الابن المتوفى #${step2SonIndex})`;
             if (hasLivingGrandchildrenAsHeirs) {
-                parentRel = 'GRANDSON';
-                displayName = `ابن ابن متوفى (من الابن المتوفى #${step2SonIndex})`;
+                virtualGrandsonCount++;
             } else {
-                parentRel = 'SON';
-                displayName = `ابن متوفى (الابن المتوفى #${step2SonIndex})`;
+                deceasedSonsCount++;
             }
-        } else {
-            step2DaughterIndex++;
-            parentDesig = `(من البنت المتوفية #${step2DaughterIndex})`;
-            parentRel = 'DAUGHTER';
-            displayName = `بنت متوفاة (البنت المتوفية #${step2DaughterIndex})`;
+        } else if (mb.type === 'daughter') {
+            deceasedDaughtersCount++;
         }
+    }
 
-        const step2HeirsList = [];
-        for (const h of Object.values(calc.heirs)) {
-            if (!h.is_blocked && h.count > 0) {
-                step2HeirsList.push({ relationship: h.relationship, count: h.count || 1 });
-            }
-        }
-        const existingParentRel = step2HeirsList.find(item => item.relationship === parentRel);
-        if (existingParentRel) {
-            existingParentRel.count += 1;
-        } else {
-            step2HeirsList.push({ relationship: parentRel, count: 1 });
-        }
+    if (deceasedSonsCount > 0) {
+        tempHeirsMap['SON'] = (tempHeirsMap['SON'] || 0) + deceasedSonsCount;
+    }
+    if (virtualGrandsonCount > 0) {
+        tempHeirsMap['GRANDSON'] = (tempHeirsMap['GRANDSON'] || 0) + virtualGrandsonCount;
+    }
+    if (deceasedDaughtersCount > 0) {
+        tempHeirsMap['DAUGHTER'] = (tempHeirsMap['DAUGHTER'] || 0) + deceasedDaughtersCount;
+    }
 
-        const step2Case = {
-            ...calc.case,
-            heirs: step2HeirsList,
-            mandatoryBequests: []
+    const step2HeirsList = Object.entries(tempHeirsMap).map(([relationship, count]) => ({
+        relationship,
+        count
+    }));
+
+    const step2Case = {
+        ...calc.case,
+        heirs: step2HeirsList,
+        mandatoryBequests: []
+    };
+    const calc2 = new calc.constructor(step2Case);
+    if (calc2.heirs['SON']) calc2.heirs['SON'].displayName = 'ابن';
+    if (calc2.heirs['DAUGHTER']) calc2.heirs['DAUGHTER'].displayName = 'بنت';
+    if (calc2.heirs['GRANDSON']) calc2.heirs['GRANDSON'].displayName = 'ابن ابن';
+    const res2 = calc2.calculate();
+
+    const step2Table = res2.distributions.map(d => {
+        const heirObj = calc2.heirs[d.relationship];
+        const isBlocked = heirObj ? heirObj.is_blocked : false;
+        return {
+            name: d.relationship_display,
+            count: d.count,
+            share: isBlocked ? '—' : d.share_fraction,
+            percentage: isBlocked ? 0 : d.percentage,
+            why: d.why
         };
-        const calc2 = new calc.constructor(step2Case);
-        if (calc2.heirs[parentRel]) {
-            calc2.heirs[parentRel].displayName = displayName;
-        }
-        const res2 = calc2.calculate();
+    });
 
-        const step2Table = res2.distributions.map(d => {
-            const heirObj = calc2.heirs[d.relationship];
-            const isBlocked = heirObj ? heirObj.is_blocked : false;
-            return {
-                name: d.relationship_display,
-                count: d.count,
-                share: isBlocked ? '—' : d.share_fraction,
-                percentage: isBlocked ? 0 : d.percentage,
-                why: d.why
-            };
-        });
+    let singleSonShare = new Fraction(0);
+    if (res2.distributions.find(d => d.relationship === 'SON')) {
+        const d = res2.distributions.find(d => d.relationship === 'SON');
+        const parts = d.share_fraction.split('/');
+        const num = parseInt(parts[0], 10) || 0;
+        const den = parts[1] ? parseInt(parts[1], 10) : 1;
+        singleSonShare = new Fraction(num, den).mul(scaleFactorForWills).div(new Fraction(d.count || 1));
+    }
+    let singleDaughterShare = new Fraction(0);
+    if (res2.distributions.find(d => d.relationship === 'DAUGHTER')) {
+        const d = res2.distributions.find(d => d.relationship === 'DAUGHTER');
+        const parts = d.share_fraction.split('/');
+        const num = parseInt(parts[0], 10) || 0;
+        const den = parts[1] ? parseInt(parts[1], 10) : 1;
+        singleDaughterShare = new Fraction(num, den).mul(scaleFactorForWills).div(new Fraction(d.count || 1));
+    }
+    let singleGrandsonShare = new Fraction(0);
+    if (res2.distributions.find(d => d.relationship === 'GRANDSON')) {
+        const d = res2.distributions.find(d => d.relationship === 'GRANDSON');
+        const parts = d.share_fraction.split('/');
+        const num = parseInt(parts[0], 10) || 0;
+        const den = parts[1] ? parseInt(parts[1], 10) : 1;
+        singleGrandsonShare = new Fraction(num, den).mul(scaleFactorForWills).div(new Fraction(d.count || 1));
+    }
 
-        const parentDist = res2.distributions.find(d => d.relationship === parentRel);
+    const resultTextParts = [];
+    let sIdx2 = 0;
+    let dIdx2 = 0;
+    for (const mb of calc.case.mandatoryBequests) {
+        if (mb.type === 'son') sIdx2++;
+        else if (mb.type === 'daughter') dIdx2++;
+
+        const label = mb.type === 'son' ? getParentLabel(mb, sIdx2) : getParentLabel(mb, dIdx2);
+
         let parentShare = new Fraction(0);
-        if (parentDist) {
-            const parts = parentDist.share_fraction.split('/');
-            const num = parseInt(parts[0], 10) || 0;
-            const den = parts[1] ? parseInt(parts[1], 10) : 1;
-            parentShare = new Fraction(num, den).mul(scaleFactorForWills);
+        if (mb.type === 'son') {
+            parentShare = hasLivingGrandchildrenAsHeirs ? singleGrandsonShare : singleSonShare;
+        } else {
+            parentShare = singleDaughterShare;
+        }
+
+        resultTextParts.push(`نصيب ${label} الافتراضي في التركة هو: ${parentShare.toString()}`);
+    }
+
+    steps.push({
+        id: 'step2',
+        title: 'ثانياً: العمل التمهيدي (افتراض حياة أصول الفروع المتوفين)',
+        desc: 'ندخل إلى المسألة أصول الفروع المتوفين باعتبارهم أحياء لتقدير نصيب كل منهم الافتراضي في التركة:',
+        table: step2Table,
+        result_text: resultTextParts.join('\n')
+    });
+
+    // =========================================================================
+    // STEP 3: Sub-problem distributions within each branch
+    // =========================================================================
+    let bSonIdx = 0;
+    let bDaughterIdx = 0;
+    const multipleBranches = calc.case.mandatoryBequests.length > 1;
+
+    for (let bIdx = 0; bIdx < calc.case.mandatoryBequests.length; bIdx++) {
+        const mb = calc.case.mandatoryBequests[bIdx];
+        if (mb.type === 'son') bSonIdx++;
+        else if (mb.type === 'daughter') bDaughterIdx++;
+
+        const branchLabel = mb.type === 'son' ? getParentLabel(mb, bSonIdx) : getParentLabel(mb, bDaughterIdx);
+
+        let parentShare = new Fraction(0);
+        if (mb.type === 'son') {
+            parentShare = hasLivingGrandchildrenAsHeirs ? singleGrandsonShare : singleSonShare;
+        } else {
+            parentShare = singleDaughterShare;
         }
         const parentShareStr = parentShare.toString();
 
-        steps.push({
-            id: `step2_${mb.id}`,
-            title: `ثانياً: العمل التمهيدي (افتراض حياة أصل الفرع المتوفى)`,
-            desc: `ندخل إلى المسألة أصل الفرع المتوفى باعتباره حياً (نفترض حياة ${mb.type === 'son' && hasLivingGrandchildrenAsHeirs ? 'ابن الابن' : mb.type === 'son' ? 'الابن' : 'البنت'} المتوفى وهو أقرب أصل وارث):`,
-            table: step2Table,
-            result_text: `نصيب ${mb.type === 'son' && hasLivingGrandchildrenAsHeirs ? `ابن الابن المتوفى (من الابن المتوفى #${step2SonIndex})` : mb.type === 'son' ? `الابن المتوفى #${step2SonIndex}` : `البنت المتوفية #${step2DaughterIndex}`} الافتراضي في التركة هو: ${parentShareStr}`
-        });
-
-        // =====================================================================
-        // STEP 3: Sub-problem distribution within the branch
-        // =====================================================================
         const step3HeirsList = [];
         const totalSons = parseInt(mb.sonsCount, 10) || 0;
         const totalDaughters = parseInt(mb.daughtersCount, 10) || 0;
@@ -494,13 +550,13 @@ export function getMandatoryBequestSteps(calc, awlResult) {
             branchBequestFract = sum.toString();
         }
 
-        const label = mb.type === 'son' && hasLivingGrandchildrenAsHeirs ? `ابن الابن المتوفى (من الابن المتوفى #${step2SonIndex})` : mb.type === 'son' ? `الابن المتوفى #${step2SonIndex}` : `البنت المتوفية #${step2DaughterIndex}`;
+        const titlePrefix = multipleBranches ? `ثالثاً (${bIdx + 1}):` : 'ثالثاً:';
         steps.push({
             id: `step3_${mb.id}`,
-            title: `ثالثاً: قسمة مقدار الوصية الواجبة للفرع المتوفى (${label}) على أصحابه`,
-            desc: `نقوم بتقسيم نصيب ${mb.type === 'son' && hasLivingGrandchildrenAsHeirs ? 'ابن الابن' : mb.type === 'son' ? 'الابن' : 'البنت'} المتوفى الافتراضي (${parentShareStr}) على فروعهم بعد خصم أنصبة ورثتهم الافتراضيين:`,
+            title: `${titlePrefix} قسمة مقدار الوصية الواجبة لفرع ${branchLabel} على مستحقيها`,
+            desc: `نقوم بتقسيم نصيب ${branchLabel} الافتراضي (${parentShareStr}) على فروعه بعد استنزال أنصبة ورثته الافتراضيين:`,
             table: step3Table,
-            result_text: `نصيب الواحد من التركة كلها هو نصيب كل فرد مضروباً في قيمة ما يخصهم من حق أصلهم (${parentShareStr}). إجمالي نصيب مستحقي الوصية الواجبة لهذه الفئة هو: ${branchBequestFract} (وهو ليس أكبر من الثلث).`
+            result_text: `نصيب الواحد من التركة كلها هو نصيب كل فرد مضروباً في قيمة ما يخصهم من حق أصلهم (${parentShareStr}). إجمالي نصيب مستحقي الوصية الواجبة لهذا الفرع هو: ${branchBequestFract} (وهو ليس أكبر من الثلث).`
         });
     }
 
@@ -508,20 +564,43 @@ export function getMandatoryBequestSteps(calc, awlResult) {
     // STEP 4: Distribution of remaining estate across all parties
     // =========================================================================
     const scaleFactor4 = calc.heirs_scale_fraction || new Fraction(1);
-    const activeHeirs = Object.entries(calc.results).map(([rel, d]) => {
+    const activeHeirs = [];
+    for (const [rel, d] of Object.entries(calc.results)) {
         const heirObj = calc.heirs[rel];
         const finalShare = d.share.mul(scaleFactor4);
-        let displayName = heirObj ? heirObj.displayName : rel;
-        if (rel === 'TREASURY') {
-            displayName = 'بيت المال';
+        if (heirObj && heirObj.branches && heirObj.branches.length > 1) {
+            const count = d.count;
+            const indShare = count > 1 ? finalShare.div(new Fraction(count)) : finalShare;
+            for (const b of heirObj.branches) {
+                const bShare = indShare.mul(new Fraction(b.count));
+                const nameMap = {
+                    'GRANDSON': 'ابن ابن',
+                    'GRANDDAUGHTER': 'بنت ابن',
+                    'GREAT_GRANDSON': 'ابن ابن ابن',
+                    'GREAT_GRANDDAUGHTER': 'بنت ابن ابن'
+                };
+                const baseName = nameMap[rel] || HEIR_NAMES_AR[rel] || rel;
+                const bDisplayName = b.designation ? `${baseName} ${b.designation}` : baseName;
+                activeHeirs.push({
+                    name: bDisplayName,
+                    count: b.count,
+                    share: bShare.toString(),
+                    percentage: Math.round(parseFloat(bShare.valueOf()) * 10000) / 100
+                });
+            }
+        } else {
+            let displayName = heirObj ? heirObj.displayName : rel;
+            if (rel === 'TREASURY') {
+                displayName = 'بيت المال';
+            }
+            activeHeirs.push({
+                name: displayName,
+                count: d.count,
+                share: finalShare.toString(),
+                percentage: Math.round(parseFloat(finalShare.valueOf()) * 10000) / 100
+            });
         }
-        return {
-            name: displayName,
-            count: d.count,
-            share: finalShare.toString(),
-            percentage: Math.round(parseFloat(finalShare.valueOf()) * 10000) / 100
-        };
-    });
+    }
 
     if (calc.mandatory_bequests_result && calc.mandatory_bequests_result.list) {
         let mbSonIndex = 0;
@@ -530,10 +609,10 @@ export function getMandatoryBequestSteps(calc, awlResult) {
             let parentDesig = '';
             if (mb.type === 'son') {
                 mbSonIndex++;
-                parentDesig = `(من الابن المتوفى #${mbSonIndex})`;
+                parentDesig = getParentDesignation(mb, mbSonIndex);
             } else {
                 mbDaughterIndex++;
-                parentDesig = `(من البنت المتوفية #${mbDaughterIndex})`;
+                parentDesig = getParentDesignation(mb, mbDaughterIndex);
             }
             for (const kid of mb.kids) {
                 let relationshipDisplay = '';

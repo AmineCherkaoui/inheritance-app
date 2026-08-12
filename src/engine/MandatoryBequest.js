@@ -417,6 +417,7 @@ export function calculateMandatoryBequests({
 
         list.push({
             id: mb.id,
+            name: mb.name || '',
             type: mb.type,
             parent_share: parentShare,
             entry_fraction: entryFraction,
@@ -462,6 +463,7 @@ export function calculateMandatoryBequests({
 
         processedBequests.push({
             id: mb.id,
+            name: mb.name || '',
             type: mb.type,
             executed_parent_share: mb.parent_share,
             executed_entry_fraction: executedEntryFraction,

@@ -1682,3 +1682,75 @@ test('57 - Moroccan Mandatory Bequest: Wife + Parents + Son + Daughter + Decease
     assert.strictEqual(d['ابن ابن ابن (من الابن المتوفى #1)'].total_value, 1203.7);
     assert.strictEqual(d['بنت ابن ابن (من الابن المتوفى #1)'].total_value, 601.85);
 });
+
+/*
+====================================================
+58 - Moroccan Mandatory Bequest: Separated Living Grandchildren Across Multiple Deceased Son Branches
+====================================================
+*/
+test('58 - Moroccan Mandatory Bequest: Separated Living Grandchildren Across Multiple Deceased Son Branches', () => {
+    const calc = new InheritanceCalculator({
+        total_estate_value: 45000,
+        heirs: [
+            { relationship: 'PATERNAL_GRANDFATHER', count: 1 },
+            { relationship: 'PATERNAL_GRANDMOTHER', count: 1 },
+            { relationship: 'MATERNAL_GRANDMOTHER', count: 1 }
+        ],
+        mandatoryBequests: [
+            {
+                id: 'mb-son-1',
+                type: 'son',
+                sonsCount: 2,
+                daughtersCount: 1,
+                greatSonsCount: 1,
+                greatDaughtersCount: 1,
+                spouseAlive: false,
+                motherAlive: false,
+                greatSpouseAlive: false
+            },
+            {
+                id: 'mb-son-2',
+                type: 'son',
+                sonsCount: 1,
+                daughtersCount: 1,
+                greatSonsCount: 1,
+                greatDaughtersCount: 1,
+                spouseAlive: false,
+                motherAlive: false,
+                greatSpouseAlive: false
+            },
+            {
+                id: 'mb-daughter-1',
+                type: 'daughter',
+                sonsCount: 1,
+                daughtersCount: 1,
+                spouseAlive: false,
+                motherAlive: false
+            }
+        ]
+    });
+
+    const res = calc.calculate();
+    const d = {};
+    for (const dist of res.distributions) {
+        d[dist.relationship_display] = dist;
+    }
+
+    // Verify each branch is separated
+    assert.ok(d['ابن ابن (من الابن المتوفى #1)'], 'Branch 1 grandsons should be separate');
+    assert.strictEqual(d['ابن ابن (من الابن المتوفى #1)'].count, 2);
+
+    assert.ok(d['ابن ابن (من الابن المتوفى #2)'], 'Branch 2 grandson should be separate');
+    assert.strictEqual(d['ابن ابن (من الابن المتوفى #2)'].count, 1);
+
+    assert.ok(d['بنت ابن (من الابن المتوفى #1)'], 'Branch 1 granddaughter should be separate');
+    assert.strictEqual(d['بنت ابن (من الابن المتوفى #1)'].count, 1);
+
+    assert.ok(d['بنت ابن (من الابن المتوفى #2)'], 'Branch 2 granddaughter should be separate');
+    assert.strictEqual(d['بنت ابن (من الابن المتوفى #2)'].count, 1);
+
+    // Verify no combined row exists
+    assert.strictEqual(d['ابن ابن (من الابن المتوفى #1) و (من الابن المتوفى #2)'], undefined);
+    assert.strictEqual(d['بنت ابن (من الابن المتوفى #1) و (من الابن المتوفى #2)'], undefined);
+});
+

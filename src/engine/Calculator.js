@@ -6,7 +6,7 @@
  */
 
 import Fraction from '../fraction.js';
-import { HEIR_NAMES_AR } from './Explanations.js';
+import { HEIR_NAMES_AR, getParentDesignation } from './Explanations.js';
 import { applyBlockingRules } from './BlockingRules.js';
 import { calculateFixedShares } from './FixedShares.js';
 import { calculateGrandmothersShare } from './Grandmothers.js';
@@ -98,69 +98,50 @@ export class InheritanceCalculator {
             for (const mb of caseData.mandatoryBequests) {
                 if (mb.type === 'son') {
                     sonIndex++;
-                    const parentDesignation = `(من الابن المتوفى #${sonIndex})`;
+                    const parentDesignation = getParentDesignation(mb, sonIndex);
 
                     const totalSons = parseInt(mb.sonsCount, 10) || 0;
                     const totalDaughters = parseInt(mb.daughtersCount, 10) || 0;
                     const totalGreatSons = parseInt(mb.greatSonsCount, 10) || 0;
                     const totalGreatDaughters = parseInt(mb.greatDaughtersCount, 10) || 0;
 
-                    if (totalSons > 0) {
-                        if (!this.heirs['GRANDSON']) {
-                            this.heirs['GRANDSON'] = {
-                                relationship: 'GRANDSON',
-                                count: totalSons,
+                    const addBranchHeir = (key, count, name) => {
+                        if (count <= 0) return;
+                        if (!this.heirs[key]) {
+                            this.heirs[key] = {
+                                relationship: key,
+                                count: count,
                                 is_blocked: false,
                                 blocked_by: null,
-                                displayName: `ابن ابن ${parentDesignation}`
+                                displayName: `${name} ${parentDesignation}`,
+                                branches: [{
+                                    id: mb.id,
+                                    designation: parentDesignation,
+                                    count: count
+                                }]
                             };
                         } else {
-                            this.heirs['GRANDSON'].count += totalSons;
-                            this.heirs['GRANDSON'].displayName += ` و ${parentDesignation}`;
+                            if (!this.heirs[key].branches) {
+                                this.heirs[key].branches = [{
+                                    id: 'initial',
+                                    designation: '',
+                                    count: this.heirs[key].count
+                                }];
+                            }
+                            this.heirs[key].count += count;
+                            this.heirs[key].displayName += ` و ${parentDesignation}`;
+                            this.heirs[key].branches.push({
+                                id: mb.id,
+                                designation: parentDesignation,
+                                count: count
+                            });
                         }
-                    }
-                    if (totalDaughters > 0) {
-                        if (!this.heirs['GRANDDAUGHTER']) {
-                            this.heirs['GRANDDAUGHTER'] = {
-                                relationship: 'GRANDDAUGHTER',
-                                count: totalDaughters,
-                                is_blocked: false,
-                                blocked_by: null,
-                                displayName: `بنت ابن ${parentDesignation}`
-                            };
-                        } else {
-                            this.heirs['GRANDDAUGHTER'].count += totalDaughters;
-                            this.heirs['GRANDDAUGHTER'].displayName += ` و ${parentDesignation}`;
-                        }
-                    }
-                    if (totalGreatSons > 0) {
-                        if (!this.heirs['GREAT_GRANDSON']) {
-                            this.heirs['GREAT_GRANDSON'] = {
-                                relationship: 'GREAT_GRANDSON',
-                                count: totalGreatSons,
-                                is_blocked: false,
-                                blocked_by: null,
-                                displayName: `ابن ابن ابن ${parentDesignation}`
-                            };
-                        } else {
-                            this.heirs['GREAT_GRANDSON'].count += totalGreatSons;
-                            this.heirs['GREAT_GRANDSON'].displayName += ` و ${parentDesignation}`;
-                        }
-                    }
-                    if (totalGreatDaughters > 0) {
-                        if (!this.heirs['GREAT_GRANDDAUGHTER']) {
-                            this.heirs['GREAT_GRANDDAUGHTER'] = {
-                                relationship: 'GREAT_GRANDDAUGHTER',
-                                count: totalGreatDaughters,
-                                is_blocked: false,
-                                blocked_by: null,
-                                displayName: `بنت ابن ابن ${parentDesignation}`
-                            };
-                        } else {
-                            this.heirs['GREAT_GRANDDAUGHTER'].count += totalGreatDaughters;
-                            this.heirs['GREAT_GRANDDAUGHTER'].displayName += ` و ${parentDesignation}`;
-                        }
-                    }
+                    };
+
+                    addBranchHeir('GRANDSON', totalSons, 'ابن ابن');
+                    addBranchHeir('GRANDDAUGHTER', totalDaughters, 'بنت ابن');
+                    addBranchHeir('GREAT_GRANDSON', totalGreatSons, 'ابن ابن ابن');
+                    addBranchHeir('GREAT_GRANDDAUGHTER', totalGreatDaughters, 'بنت ابن ابن');
                 }
             }
         }
