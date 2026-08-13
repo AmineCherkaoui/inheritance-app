@@ -32,7 +32,7 @@ export default function StepSidebar({
   ];
 
   return (
-    <aside className="w-full min-h-[90svh] bg-primary-950 text-white rounded-2xl p-6 sm:p-7 flex flex-col justify-between shadow-2xl border border-amber-900/30 relative overflow-hidden shrink-0">
+    <aside className="w-full min-h-[96svh] bg-primary-950 text-white rounded-2xl p-6 sm:p-7 flex flex-col justify-between  relative overflow-hidden ">
       {/* Subtle background arabesque pattern overlay */}
       <div
         className="absolute inset-0 bg-cover opacity-6 pointer-events-none"
