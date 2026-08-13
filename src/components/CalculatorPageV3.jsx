@@ -347,6 +347,20 @@ export default function CalculatorPageV3() {
           newErrors[will.id] = 'يرجى اختيار الكسر للوصية.';
         }
       });
+      const hasZeroCount = mandatoryBequests.some((mb) => {
+        const count =
+          (mb.sonsCount || 0) +
+          (mb.daughtersCount || 0) +
+          (mb.greatSonsCount || 0) +
+          (mb.greatDaughtersCount || 0);
+        return count <= 0;
+      });
+      if (hasMandatoryBequest && (mandatoryBequests.length === 0 || hasZeroCount)) {
+        newErrors.mandatoryBequests =
+          mandatoryBequests.length === 0
+            ? 'يرجى إضافة فرع متوفى واحد على الأقل أو تغيير الخيار إلى "لا".'
+            : 'يرجى تحديد عدد الأحفاد للفرع المضاف.';
+      }
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
         return;
@@ -430,7 +444,18 @@ export default function CalculatorPageV3() {
       return heirs[spouseKey] === undefined;
     }
     if (currentMiniStep.key === 'wills') {
-      return wills.some((will) => !will.value);
+      const hasUnsetWills = wills.some((will) => !will.value);
+      const hasZeroCount = mandatoryBequests.some((mb) => {
+        const count =
+          (mb.sonsCount || 0) +
+          (mb.daughtersCount || 0) +
+          (mb.greatSonsCount || 0) +
+          (mb.greatDaughtersCount || 0);
+        return count <= 0;
+      });
+      const hasInvalidMandatoryBequests =
+        hasMandatoryBequest && (mandatoryBequests.length === 0 || hasZeroCount);
+      return hasUnsetWills || hasInvalidMandatoryBequests;
     }
     return false;
   })();
@@ -604,7 +629,12 @@ export default function CalculatorPageV3() {
                   type="button"
                   onClick={handleNext}
                   disabled={isNextDisabled}
-                  className="px-8 py-1.5 rounded-md bg-primary-950 hover:bg-primary-900 disabled:opacity-50 text-white font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className={cn(
+                    'px-8 py-1.5 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
+                    isNextDisabled
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-primary-900 cursor-pointer'
+                  )}
                 >
                   <Calculator size={16} />
                   <span>احسب التركة</span>
@@ -615,7 +645,12 @@ export default function CalculatorPageV3() {
                   type="button"
                   onClick={handleNext}
                   disabled={isNextDisabled}
-                  className="px-8 py-1.5 rounded-md bg-primary-950 hover:bg-primary-900 disabled:opacity-50 text-white font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
+                  className={cn(
+                    'px-8 py-1.5 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
+                    isNextDisabled
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-primary-900 cursor-pointer'
+                  )}
                 >
                   <span>التالي</span>
                   <ArrowLeft size={16} />

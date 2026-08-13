@@ -50,6 +50,7 @@ export default function MiniStepWills({
           setHasMandatoryBequest={handleSetHasMandatoryBequest}
           mandatoryBequests={mandatoryBequests}
           setMandatoryBequests={setMandatoryBequests}
+          errors={errors}
         />
       </div>
     </motion.div>

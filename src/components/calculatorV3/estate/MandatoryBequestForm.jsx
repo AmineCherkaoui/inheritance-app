@@ -1,14 +1,15 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@heroui/react';
-import { Plus, Minus, Trash2, Users } from 'lucide-react';
+import { Plus, Minus, Trash2, Users, AlertTriangle } from 'lucide-react';
 import { cn } from '../../../utils';
 
 export default function MandatoryBequestForm({
   hasMandatoryBequest,
   setHasMandatoryBequest,
   mandatoryBequests = [],
-  setMandatoryBequests
+  setMandatoryBequests,
+  errors = {}
 }) {
   return (
     <div className="space-y-4 bg-white/50 p-4 rounded-xl">
@@ -147,14 +148,26 @@ export default function MandatoryBequestForm({
               </Button>
             </div>
 
+            {/* Error message when Yes is selected but no branch is added */}
+            {mandatoryBequests.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 p-2 rounded-lg bg-secondary-400/5 border border-secondary-400/20 text-secondary-400 text-xs  text-right"
+              >
+                <AlertTriangle size={15} className="shrink-0 text-secondary-400" />
+                <span>يرجى إضافة فرع متوفى واحد على الأقل (أولاد ابن أو أولاد بنت) أو تغيير الخيار إلى &quot;لا&quot;.</span>
+              </motion.div>
+            )}
+
             {/* Branches List */}
             {mandatoryBequests.map((mb, idx) => (
               <div
                 key={mb.id}
-                className="flex flex-col gap-3 rounded-xl p-4  bg-white/90 border border-neutral-200/50"
+                className="flex flex-col gap-3 rounded-xl p-4 bg-white/90 border border-neutral-200/50"
               >
                 {/* Branch Header & Name Input */}
-                <div className="flex items-center justify-between gap-3 pb-3 ">
+                <div className="flex items-center justify-between gap-3 pb-3">
                   <div className="flex items-center gap-2 flex-1">
                     <input
                       type="text"
@@ -207,7 +220,7 @@ export default function MandatoryBequestForm({
                           );
                           setMandatoryBequests(updated);
                         }}
-                        className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                        className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                       >
                         <Minus size={12} />
                       </Button>
@@ -225,7 +238,7 @@ export default function MandatoryBequestForm({
                           );
                           setMandatoryBequests(updated);
                         }}
-                        className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                        className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                       >
                         <Plus size={12} />
                       </Button>
@@ -249,7 +262,7 @@ export default function MandatoryBequestForm({
                           );
                           setMandatoryBequests(updated);
                         }}
-                        className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                        className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                       >
                         <Minus size={12} />
                       </Button>
@@ -267,7 +280,7 @@ export default function MandatoryBequestForm({
                           );
                           setMandatoryBequests(updated);
                         }}
-                        className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                        className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                       >
                         <Plus size={12} />
                       </Button>
@@ -291,7 +304,7 @@ export default function MandatoryBequestForm({
                               );
                               setMandatoryBequests(updated);
                             }}
-                            className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                            className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                           >
                             <Minus size={12} />
                           </Button>
@@ -309,7 +322,7 @@ export default function MandatoryBequestForm({
                               );
                               setMandatoryBequests(updated);
                             }}
-                            className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                            className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                           >
                             <Plus size={12} />
                           </Button>
@@ -330,7 +343,7 @@ export default function MandatoryBequestForm({
                               );
                               setMandatoryBequests(updated);
                             }}
-                            className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                            className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                           >
                             <Minus size={12} />
                           </Button>
@@ -348,7 +361,7 @@ export default function MandatoryBequestForm({
                               );
                               setMandatoryBequests(updated);
                             }}
-                            className="size-7 min-w-0 rounded-md  bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
+                            className="size-7 min-w-0 rounded-md bg-white/40 hover:bg-white/80 text-primary-950 font-bold"
                           >
                             <Plus size={12} />
                           </Button>
