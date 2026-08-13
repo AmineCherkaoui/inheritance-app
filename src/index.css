@@ -1,8 +1,33 @@
 @font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/Tajawal-Regular.ttf') format('truetype');
-  font-weight: normal;
+  font-family: 'DINNextLTArabic';
+  src: url('/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+  font-weight: 300;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DINNextLTArabic';
+  src: url('/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DINNextLTArabic';
+  src: url('/fonts/DINNextLTArabic-Medium-4.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DINNextLTArabic';
+  src: url('/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -10,6 +35,34 @@
   src: url('/fonts/Aalmaghribi.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+}
+
+@theme {
+  --color-primary-50: oklch(0.958 0.021 17.6);
+  --color-primary-100: oklch(0.928 0.037 19.95);
+  --color-primary-200: oklch(0.846 0.084 19.89);
+  --color-primary-300: oklch(0.774 0.133 20.58);
+  --color-primary-400: oklch(0.704 0.187 23.93);
+  --color-primary-500: oklch(0.625 0.253 29.73);
+  --color-primary-600: oklch(0.543 0.219 29.76);
+  --color-primary-700: oklch(0.462 0.186 29.78);
+  --color-primary-800: oklch(0.372 0.151 29.68);
+  --color-primary-900: oklch(0.291 0.117 29.86);
+  --color-primary-950: oklch(0.246 0.1 29.75);
+}
+
+@theme {
+  --color-secondary-50: oklch(0.974 0.016 73.68);
+  --color-secondary-100: oklch(0.949 0.033 77.59);
+  --color-secondary-200: oklch(0.889 0.083 79.51);
+  --color-secondary-300: oklch(0.835 0.129 83.35);
+  --color-secondary-400: oklch(0.735 0.113 84.02);
+  --color-secondary-500: oklch(0.639 0.099 82.94);
+  --color-secondary-600: oklch(0.537 0.083 83.03);
+  --color-secondary-700: oklch(0.441 0.068 82.67);
+  --color-secondary-800: oklch(0.338 0.052 84.14);
+  --color-secondary-900: oklch(0.242 0.037 83.81);
+  --color-secondary-950: oklch(0.188 0.03 81.92);
 }
 
 .font-quran {
@@ -22,20 +75,6 @@
   text-rendering: optimizeLegibility !important;
   font-variant-ligatures: common-ligatures contextual discretionary-ligatures historical-ligatures !important;
   font-feature-settings: "liga" on, "calt" on, "ccmp" on, "locl" on, "mset" on !important;
-}
-
-@font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/Tajawal-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/Tajawal-Bold.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
 }
 
 @import "tailwindcss";
@@ -62,7 +101,7 @@
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --radius-lg: var(--radius);
-  --font-sans: 'Tajawal', 'Outfit', 'Inter', sans-serif;
+  --font-sans: 'DINNextLTArabic', 'Outfit', 'Inter', sans-serif;
 }
 
 /* Custom theme variables */
@@ -79,13 +118,13 @@ input,
 select,
 textarea,
 button {
-  font-family: 'Tajawal', 'Outfit', 'Inter', sans-serif !important;
+  font-family: 'DINNextLTArabic', 'Outfit', 'Inter', sans-serif !important;
 }
 
 body {
-  background: linear-gradient(135deg, #fbfcfd 0%, #f5f7fa 100%);
+  background-color: var(--color-secondary-50);
   color: #1e293b;
-  min-height: 100vh;
+  min-height: 100svh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

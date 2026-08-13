@@ -1,0 +1,58 @@
+import React from 'react';
+import { motion } from 'motion/react';
+import { Link, useLocation } from 'react-router';
+
+export default function TopNav({ activeHref }) {
+  const location = useLocation();
+
+  const navItems = [
+    { label: 'الرئيسية', href: '/v3' },
+    { label: 'عن الميراث', href: '/v3/#about' },
+    { label: 'أحكام الميراث', href: '/v3/#rules' },
+    { label: 'من نحن؟', href: '/v3/#about-us' }
+  ];
+
+  const currentPath = location.pathname + location.hash;
+
+  return (
+    <motion.header
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="w-full shrink-0 z-10"
+    >
+      <nav className="w-full flex items-center justify-center gap-2 sm:gap-4 bg-primary-950 text-secondary-300 px-4 sm:px-8  rounded-xl border border-amber-900/40 text-xs sm:text-sm font-bold relative">
+        {navItems.map((item, idx) => {
+          const isActive = activeHref !== undefined
+            ? activeHref === item.href
+            : item.href === '/'
+              ? currentPath === '/' || currentPath === '/v3' || currentPath === ''
+              : currentPath === item.href;
+
+          return (
+            <Link
+              key={idx}
+              to={item.href}
+              className={` relative px-4 py-4  transition-colors duration-200 select-none ${isActive
+                ? 'text-secondary-200 font-extrabold'
+                : 'text-secondary-100 hover:text-white '
+                }`}
+            >
+              <span className="relative z-10">{item.label}</span>
+
+
+              {/* Morphing bottom border line indicator */}
+              {isActive && (
+                <motion.div
+                  layoutId="topNavActiveBorder"
+                  className="absolute bottom-0 inset-x-1 h-0.75 bg-secondary-200 rounded-full z-10 shadow-xs shadow-secondary-300/50"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+    </motion.header>
+  );
+}

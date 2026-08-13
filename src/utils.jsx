@@ -1,5 +1,22 @@
 import React from 'react';
 
+export function cn(...inputs) {
+  const classes = [];
+  for (const input of inputs) {
+    if (!input) continue;
+    if (typeof input === 'string' || typeof input === 'number') {
+      classes.push(input);
+    } else if (Array.isArray(input)) {
+      classes.push(cn(...input));
+    } else if (typeof input === 'object') {
+      for (const [key, val] of Object.entries(input)) {
+        if (val) classes.push(key);
+      }
+    }
+  }
+  return classes.filter(Boolean).join(' ');
+}
+
 const HEIR_MAP = {
   HUSBAND: 'hu',
   WIFE: 'wi',
@@ -52,7 +69,7 @@ export const serializeState = (state) => {
     if (state.totalEstate !== undefined && state.totalEstate !== null) compact.e = state.totalEstate;
     if (state.debts !== undefined && state.debts !== null) compact.d = state.debts;
     if (state.heirsApprovedExcess) compact.a = 1;
-    
+
     if (state.heirs) {
       compact.h = {};
       for (const [k, v] of Object.entries(state.heirs)) {
@@ -60,7 +77,7 @@ export const serializeState = (state) => {
         compact.h[shortKey] = v;
       }
     }
-    
+
     if (state.wills && state.wills.length > 0) {
       compact.w = state.wills.map(w => {
         const cw = {};
@@ -205,7 +222,7 @@ export const generateQRCodeWithLogo = async (text) => {
       const ctx = canvas.getContext('2d');
       const logo = new window.Image();
       logo.crossOrigin = 'anonymous';
-      logo.src = '/icon.svg';
+      logo.src = '/images/logo.svg';
 
       await new Promise((resolve) => {
         logo.onload = () => {
@@ -214,7 +231,7 @@ export const generateQRCodeWithLogo = async (text) => {
 
           ctx.save();
           // Draw white circular background for logo with amber border
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#000';
           ctx.beginPath();
           ctx.arc(size / 2, size / 2, (logoSize / 2) + 5, 0, Math.PI * 2);
           ctx.fill();

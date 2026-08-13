@@ -345,24 +345,40 @@ export default function CalculatorPageV2() {
 
   const checkWillsExceedThird = () => {
     let net = parseFloat(totalEstate) - parseFloat(debts || 0);
-    if (net <= 0) return false;
 
-    let sum = 0;
+    let sumFraction = 0;
+    let sumFixedValue = 0;
+    let hasValidSelection = false;
+
     for (const will of wills) {
-      let val = 0;
+      if (!will.value || will.value === '') continue;
+      hasValidSelection = true;
       if (will.valueType === 'percentage') {
-        val = (parseFloat(will.value) || 0) / 100 * net;
+        sumFraction += (parseFloat(will.value) || 0) / 100;
       } else if (will.valueType === 'fraction') {
-        const parts = (will.value || '1/3').split('/');
+        const parts = will.value.split('/');
         const num = parseFloat(parts[0]) || 0;
         const den = parseFloat(parts[1]) || 1;
-        val = (num / den) * net;
+        if (den > 0) {
+          sumFraction += num / den;
+        }
       } else {
-        val = parseFloat(will.value) || 0;
+        sumFixedValue += parseFloat(will.value) || 0;
       }
-      sum += val;
     }
-    return sum > (net / 3);
+
+    if (!hasValidSelection) return false;
+
+    if (sumFixedValue === 0) {
+      return sumFraction > (1 / 3) + 0.00001;
+    }
+
+    if (net > 0) {
+      const totalWillValue = (sumFraction * net) + sumFixedValue;
+      return totalWillValue > (net / 3) + 0.01;
+    }
+
+    return sumFraction > (1 / 3) + 0.00001;
   };
 
   const activeSteps = ALL_STEPS.filter(step => {

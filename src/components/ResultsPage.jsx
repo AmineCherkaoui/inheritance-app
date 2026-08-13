@@ -360,7 +360,7 @@ export default function ResultsPage() {
                         <Tooltip
                           wrapperStyle={{ zIndex: 1000 }}
                           formatter={(value) => `${value.toLocaleString()} د.م.`}
-                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'Tajawal', textAlign: 'right' }}
+                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'DINNextLTArabic', textAlign: 'right' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -404,7 +404,7 @@ export default function ResultsPage() {
                         <Tooltip
                           wrapperStyle={{ zIndex: 1000 }}
                           formatter={(value) => `${value.toLocaleString()} د.م.`}
-                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'Tajawal', textAlign: 'right' }}
+                          contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'DINNextLTArabic', textAlign: 'right' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -449,7 +449,7 @@ export default function ResultsPage() {
                       <Tooltip
                         wrapperStyle={{ zIndex: 1000 }}
                         formatter={(value) => `${value.toLocaleString()} د.م.`}
-                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'Tajawal', textAlign: 'right' }}
+                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontFamily: 'DINNextLTArabic', textAlign: 'right' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
