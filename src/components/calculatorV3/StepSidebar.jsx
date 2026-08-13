@@ -52,7 +52,7 @@ export default function StepSidebar({
 
 
         {/* Sidebar Title */}
-        <div className="flex items-center gap-2 text-secondary-300 text-sm sm:text-base font-extrabold pt-1">
+        <div className="flex items-center gap-2 text-secondary-300  pt-1">
           <Calculator size={16} />
           <span>محاكي تقسيم التركات الشرعي</span>
         </div>

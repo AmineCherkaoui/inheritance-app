@@ -624,7 +624,7 @@ export default function CalculatorPageV3() {
             </div>
 
             {/* Sharia Notice Banner */}
-            <div className="mt-8 w-full bg-secondary-100  text-secondary-400/60 py-2 px-4 rounded-sm text-center text-xs font-bold flex items-center justify-center gap-2">
+            <div className="mt-8 w-full bg-secondary-100  text-secondary-400/60 py-2 px-4 rounded-sm text-center text-xs flex items-center justify-center gap-2">
               <div className="size-6 rounded-full bg-secondary-400/60 flex items-center justify-center shrink-0">
                 <AlertCircle size={16} className="text-white" />
               </div>

@@ -21,14 +21,14 @@ export default function MandatoryBequestForm({
             setMandatoryBequests([]);
           }
         }}
-        className="flex items-center justify-between gap-4 cursor-pointer select-none"
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 cursor-pointer select-none"
       >
         <div className="flex flex-col text-right">
-          <span className="text-primary-950 font-extrabold flex items-center gap-1.5">
+          <span className="text-primary-950 text-sm sm:text-base font-extrabold flex items-center gap-1.5">
             <Users size={20} />
             <span>هل يوجد أولاد لابن المتوفي او لبنت متوفية (وصية واجبة) </span>
           </span>
-          <span className="text-xs text-muted-foreground mt-0.5">
+          <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
             تُمنح للأحفاد المحجوبين الذين توفي والدهم أو والدتهم في حياة المورث وفق القانون
           </span>
         </div>
@@ -119,7 +119,7 @@ export default function MandatoryBequestForm({
                     }
                   ])
                 }
-                className="flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus size={15} />
                 <span>إضافة أولاد ابن متوفى</span>
@@ -140,7 +140,7 @@ export default function MandatoryBequestForm({
                     }
                   ])
                 }
-                className="flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus size={15} />
                 <span>إضافة أولاد بنت متوفية</span>
