@@ -17,8 +17,8 @@ export default function WillsForm({
     <div className="flex flex-col gap-4 bg-white/50 p-4 rounded-xl">
       {/* Title */}
       <div className="space-y-1">
-        <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 justify-start text-right">
-          <ScrollText size={15} className="text-primary-950" />
+        <label className=" text-primary-950 font-bold text-muted-foreground flex items-center gap-2 justify-start text-right">
+          <ScrollText size={20} />
           <span >الوصايا </span>
         </label>
 

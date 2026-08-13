@@ -30,8 +30,8 @@ export default function MiniStepEstateDebts({
       <div className="space-y-4">
         {/* Total Estate */}
         <div className="space-y-1.5 pt-2">
-          <label className="text-xs font-bold text-muted-foreground block text-right">
-            قيمة التركة الإجمالية (المال الخام)
+          <label className="text-sm font-bold text-muted-foreground block text-right">
+            قيمة التركة الإجمالية
           </label>
           <div className="relative">
             <input
@@ -60,7 +60,7 @@ export default function MiniStepEstateDebts({
 
         {/* Debts */}
         <div className="space-y-1.5 pt-2">
-          <label className="text-xs font-bold text-muted-foreground block text-right">
+          <label className="text-sm font-bold text-muted-foreground block text-right">
             الديون والالتزامات المالية (اختياري)
           </label>
           <div className="relative">

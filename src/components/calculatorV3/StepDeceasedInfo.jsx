@@ -27,7 +27,7 @@ export default function StepDeceasedInfo({
 
       {/* Gender Selection */}
       <div className="space-y-2">
-        <span className="text-xs font-bold text-muted-foreground block text-right">
+        <span className="text-sm font-bold text-muted-foreground block text-right">
           الجنس
         </span>
         <div className="grid grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ export default function StepDeceasedInfo({
 
       {/* Name Input */}
       <div className="space-y-1.5 pt-2">
-        <label className="text-xs font-bold text-muted-foreground block text-right">
+        <label className="text-sm font-bold text-muted-foreground block text-right">
           {deceasedGender === 'female'
             ? 'اسم المتوفاة (اختياري)'
             : deceasedGender === 'male'

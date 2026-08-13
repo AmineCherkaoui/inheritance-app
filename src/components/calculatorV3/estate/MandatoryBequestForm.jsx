@@ -24,11 +24,11 @@ export default function MandatoryBequestForm({
         className="flex items-center justify-between gap-4 cursor-pointer select-none"
       >
         <div className="flex flex-col text-right">
-          <span className="text-xs font-extrabold text-primary-950 flex items-center gap-1.5">
-            <Users size={14} className="shrink-0" />
+          <span className="text-primary-950 font-extrabold flex items-center gap-1.5">
+            <Users size={20} />
             <span>هل يوجد أولاد لابن المتوفي او لبنت متوفية (وصية واجبة) </span>
           </span>
-          <span className="text-[10px] text-muted-foreground mt-0.5">
+          <span className="text-xs text-muted-foreground mt-0.5">
             تُمنح للأحفاد المحجوبين الذين توفي والدهم أو والدتهم في حياة المورث وفق القانون
           </span>
         </div>
