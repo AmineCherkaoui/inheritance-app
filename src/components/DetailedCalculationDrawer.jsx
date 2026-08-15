@@ -14,7 +14,13 @@ function formatHeirsListSummary(distributions) {
   const branches = {};
 
   for (const d of distributions) {
-    if (d.relationship === 'TREASURY' || d.relationship_display === 'بيت المال') {
+    if (
+      d.relationship === 'TREASURY' ||
+      d.relationship_display === 'بيت المال' ||
+      d.relationship?.startsWith('WILL_') ||
+      d.is_will ||
+      d.type === 'will'
+    ) {
       continue;
     }
     const text = d.relationship_display;

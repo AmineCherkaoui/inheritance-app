@@ -103,7 +103,7 @@ export async function exportExcelReport(result) {
       row.getCell(2).numFmt = currencyFmt;
       row.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
       row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
-      
+
       const isTotalRow = idx === 3;
       const rFont = {
         bold: isTotalRow,

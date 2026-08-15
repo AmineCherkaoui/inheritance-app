@@ -43,9 +43,9 @@ export default function MiniStepEstateDebts({
                 const val = e.target.value;
                 setTotalEstate(val === '' ? undefined : Math.max(0, parseFloat(val) || 0));
               }}
-              placeholder="أدخل إجمالي مبلغ التركة (د.م.)"
+              placeholder="أدخل إجمالي مبلغ التركة"
               className={cn(
-                'w-full pr-11 px-4 py-2 rounded-lg border border-primary-950 bg-white/20 text-primary-950 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right',
+                'w-full pr-11 px-4 py-2 rounded-lg border border-primary-950/20 bg-white/50 text-primary-950 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right',
                 errors.totalEstate && 'border-red-500 focus:ring-red-500'
               )}
             />
@@ -74,7 +74,7 @@ export default function MiniStepEstateDebts({
                 setDebts(val === '' ? undefined : Math.max(0, parseFloat(val) || 0));
               }}
               placeholder="أدخل إجمالي الديون المستحقة إن وجدت"
-              className="w-full pr-11 px-4 py-2 rounded-lg border border-primary-950 bg-white/20 text-primary-950 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right"
+              className="w-full pr-11 px-4 py-2 rounded-lg border border-primary-950/20 bg-white/50 text-primary-950 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right"
             />
             <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
               <BanknoteX size={18} className="text-primary-950" />

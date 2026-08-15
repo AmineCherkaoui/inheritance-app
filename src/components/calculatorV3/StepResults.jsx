@@ -1,39 +1,22 @@
 import React, { useState } from 'react';
-import { Card, Button, Separator } from '@heroui/react';
 import { motion } from 'motion/react';
+import { Button } from '@heroui/react';
 import {
   Scale, ShieldAlert, FileText,
-  TrendingDown, TrendingUp, Users, ScrollText, Banknote,
-  PieChart as PieIcon, BarChart3, Share2, ChevronLeft
+  FileSpreadsheet, Share2, ChevronLeft,
+  ShieldCheck, Check, Banknote,
+  TrendingDown, ScrollText, PieChart as PieIcon
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { serializeState, generateQRCodeWithLogo } from '../../utils';
+import { serializeState, generateQRCodeWithLogo, cn } from '../../utils';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from '../PdfReport';
 import { exportExcelReport } from '../ExcelReport';
-import DetailedCalculationDrawer from '../DetailedCalculationDrawer';
+import DetailedCalculationDrawerV3 from './DetailedCalculationDrawerV3';
+import StepHeader from './StepHeader';
 
 function formatCurrency(value) {
   return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' د.م.';
-}
-
-function BreakdownStep({ icon: Icon, iconColor, label, value, valueColor = 'text-foreground', operation, highlight }) {
-  return (
-    <div className={`flex items-center justify-between gap-3 py-3 px-4 rounded-xl transition-colors ${highlight ? 'bg-emerald-50/70 border border-emerald-200/60' : 'bg-default-50 border border-default-100'}`}>
-      <div className="flex items-center gap-2.5">
-        {operation && (
-          <span className={`text-xs font-black w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${operation === '-' ? 'bg-red-100/70 text-red-600' : 'bg-emerald-100/70 text-emerald-600'}`}>
-            {operation}
-          </span>
-        )}
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconColor || 'bg-default-100 text-muted-foreground'}`}>
-          <Icon size={14} />
-        </div>
-        <span className="text-xs font-bold text-muted-foreground">{label}</span>
-      </div>
-      <span className={`text-xs sm:text-sm font-extrabold font-mono ${valueColor}`}>{formatCurrency(value)}</span>
-    </div>
-  );
 }
 
 function getCommonDenominatorFractions(distributions) {
@@ -79,6 +62,9 @@ function getCommonDenominatorFractions(distributions) {
   });
 }
 
+const CHART_COLORS = ['#b5893d', '#4a7c59', '#6366f1', '#d97706', '#8b5cf6', '#0284c7', '#e11d48', '#059669'];
+const ALLOC_COLORS = ['#b5893d', '#8b5cf6', '#ef4444'];
+
 export default function StepResults({
   result,
   onBackToEdit,
@@ -89,14 +75,17 @@ export default function StepResults({
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [chartMode, setChartMode] = useState('heirs'); // 'heirs' | 'estate'
 
   if (!result) {
     return (
       <div className="w-full text-center py-12 space-y-4">
         <Scale size={36} className="text-muted-foreground mx-auto" />
-        <p className="text-sm font-bold text-muted-foreground">لا توجد نتائج متوفرة بعد. يرجى إكمال الخطوات السابقة ثم الضغط على حساب التركة.</p>
+        <p className="text-sm font-bold text-muted-foreground">
+          لا توجد نتائج متوفرة بعد. يرجى إكمال الخطوات السابقة ثم الضغط على حساب التركة.
+        </p>
         {onBackToEdit && (
-          <Button onPress={onBackToEdit} className="bg-amber-600 text-white font-bold rounded-xl">
+          <Button onPress={onBackToEdit} className="bg-primary-950 text-secondary-200 font-bold rounded-xl">
             الرجوع للخطوات
           </Button>
         )}
@@ -119,17 +108,28 @@ export default function StepResults({
     { name: 'صافي الورثة', value: displayNetEstate, percentage: (displayNetEstate / result.total_estate) * 100 }
   ];
   if (result.total_wills_cost > 0) {
-    estateAllocationData.push({ name: 'الوصايا المنفذة', value: result.total_wills_cost, percentage: (result.total_wills_cost / result.total_estate) * 100 });
+    estateAllocationData.push({
+      name: 'الوصايا المنفذة',
+      value: result.total_wills_cost,
+      percentage: (result.total_wills_cost / result.total_estate) * 100
+    });
   }
   if (result.deductions > 0) {
-    estateAllocationData.push({ name: 'الديون والالتزامات', value: result.deductions, percentage: (result.deductions / result.total_estate) * 100 });
+    estateAllocationData.push({
+      name: 'الديون والالتزامات',
+      value: result.deductions,
+      percentage: (result.deductions / result.total_estate) * 100
+    });
   }
 
-  const COLORS = ['#b5893d', '#d97706', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6366f1'];
-  const ALLOC_COLORS = ['#b5893d', '#8b5cf6', '#ef4444'];
   const hasWillsOrDebts = result.total_wills_cost > 0 || result.deductions > 0;
   const isMandatory = result.mandatory_bequest_steps && result.mandatory_bequest_steps.length > 0;
-  const stepsCount = isMandatory ? result.mandatory_bequest_steps.length : (result.standard_steps?.length || 3);
+
+  // Extract debt items if present in snapshot
+  const rawDebts = stateSnapshot.debts || [];
+  const activeDebtsList = Array.isArray(rawDebts)
+    ? rawDebts.filter((d) => Number(d.amount) > 0)
+    : [];
 
   const getShareLink = () => {
     const code = serializeState(stateSnapshot);
@@ -201,294 +201,287 @@ export default function StepResults({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.22 }}
-      className="w-full space-y-6"
+      className="w-full flex flex-col gap-6"
     >
       {/* Header Section */}
-      <div className="flex items-center justify-center gap-3">
-        <div className="h-px bg-default-200 flex-1 max-w-28" />
-        <div className="flex items-center gap-2 text-foreground font-black text-base sm:text-lg">
-          <Scale size={18} className="text-amber-700" />
-          <span>النتائج وتفاصيل القسمة الشرعية</span>
+      <StepHeader
+        title="تفاصيل توزيع التركة"
+        icon={Scale}
+        subtitle="توزيع شرعي مبني على الشريعة الإسلامية وقانون الأسرة"
+      />
+
+      {/* Estate Liquidation Overview (تصفية التركة والخصوم) */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-sm font-bold text-muted-foreground block text-right">
+            تصفية التركة والخصوم الشرعية
+          </span>
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="font-bold text-muted-foreground">
+              {result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى'}:
+            </span>
+            <span className="font-black text-primary-950">
+              {result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}
+            </span>
+          </div>
         </div>
-        <div className="h-px bg-default-200 flex-1 max-w-28" />
+
+        <div className={cn(
+          'grid gap-3',
+          hasWillsOrDebts ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'
+        )}>
+          {/* Gross Estate */}
+          <div className="bg-white/50 border border-primary-950/20 rounded-xl p-3.5 flex flex-col text-right">
+            <span className="text-[11px] font-bold text-muted-foreground">إجمالي التركة (الخام)</span>
+            <span className="text-xs sm:text-sm font-black font-mono text-primary-950 mt-1">
+              {formatCurrency(result.total_estate)}
+            </span>
+          </div>
+
+          {/* Debts */}
+          {hasWillsOrDebts && (
+            <div className={cn(
+              'border rounded-xl p-3.5 flex flex-col text-right',
+              result.deductions > 0 ? 'bg-red-500/5 border-red-500/30' : 'bg-white/50 border-primary-950/20'
+            )}>
+              <span className="text-[11px] font-bold text-red-700">الديون والالتزامات</span>
+              <span className="text-xs sm:text-sm font-black font-mono text-red-700 mt-1">
+                {result.deductions > 0 ? `- ${formatCurrency(result.deductions)}` : '0 د.م.'}
+              </span>
+            </div>
+          )}
+
+          {/* Wills */}
+          {hasWillsOrDebts && (
+            <div className={cn(
+              'border rounded-xl p-3.5 flex flex-col text-right',
+              result.total_wills_cost > 0 ? 'bg-purple-500/5 border-purple-500/30' : 'bg-white/50 border-primary-950/20'
+            )}>
+              <span className="text-[11px] font-bold text-purple-700">الوصايا المنفذة</span>
+              <span className="text-xs sm:text-sm font-black font-mono text-purple-700 mt-1">
+                {result.total_wills_cost > 0 ? `- ${formatCurrency(result.total_wills_cost)}` : '0 د.م.'}
+              </span>
+            </div>
+          )}
+
+          {/* Net Estate */}
+          <div className="bg-primary-950 border border-secondary-200/50 rounded-xl p-3.5 flex flex-col text-right">
+            <span className="text-[11px] font-bold text-secondary-200/80">صافي تركة الورثة</span>
+            <span className="text-xs sm:text-sm font-black font-mono text-secondary-200 mt-1">
+              {formatCurrency(displayNetEstate)}
+            </span>
+          </div>
+        </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground -mt-3">
-        توزيع شرعي فقهي دقيق مبني على قواعد الميراث وتأصيل الفروض
-      </p>
 
-      {/* Aul Alert if any */}
-      {result.is_aul && (
-        <div className="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 text-amber-950 rounded-2xl text-xs leading-relaxed text-right">
-          <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <strong className="text-amber-800">تنبيه بالعول:</strong> عالت المسألة نظراً لزيادة السهام المفروضة على أصل المسألة. تم تعديل نصيب كل وارث بنسبة عادلة شرعاً (أصل المسألة الجديد: {result.aul_sum_fractions}).
+      {/* Main Grid: Heirs Table (Right) & Pie Chart (Left) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Chart Column - 4 Cols */}
+        <div className="lg:col-span-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-muted-foreground block text-right">
+              التحليل البياني
+            </span>
+            {hasWillsOrDebts && (
+              <div className="flex items-center gap-1 bg-white/80 p-0.5 rounded-lg border border-primary-950/10 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setChartMode('heirs')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md cursor-pointer transition-colors',
+                    chartMode === 'heirs' ? 'bg-primary-950 text-white' : 'text-primary-950 hover:bg-primary-950/5'
+                  )}
+                >
+                  الورثة
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMode('estate')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md cursor-pointer transition-colors',
+                    chartMode === 'estate' ? 'bg-primary-950 text-white' : 'text-primary-950 hover:bg-primary-950/5'
+                  )}
+                >
+                  التركة
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* Estate Summary Breakdown */}
-      <Card className="rounded-2xl border border-default-200 bg-white p-5 shadow-xs space-y-3.5 text-right">
-        <div className="flex justify-between items-center pb-2.5 border-b border-default-100">
-          <span className="text-xs font-black text-muted-foreground">
-            {result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى'}
-          </span>
-          <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-lg">
-            {result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}
-          </span>
-        </div>
-
-        <div className="space-y-2">
-          <BreakdownStep
-            icon={Banknote}
-            label="إجمالي التركة (المال الخام)"
-            value={result.total_estate}
-            valueColor="text-foreground"
-          />
-
-          {result.deductions > 0 && (
-            <BreakdownStep
-              icon={TrendingDown}
-              iconColor="bg-red-50 text-red-500"
-              label="الديون والالتزامات المالية"
-              value={result.deductions}
-              valueColor="text-red-600"
-              operation="-"
-            />
-          )}
-
-          {result.total_wills_cost > 0 && (
-            <BreakdownStep
-              icon={ScrollText}
-              iconColor="bg-purple-50 text-purple-500"
-              label="الوصايا الشرعية المنفذة"
-              value={result.total_wills_cost}
-              valueColor="text-purple-600"
-              operation="-"
-            />
-          )}
-
-          <Separator className="my-1" />
-
-          <BreakdownStep
-            icon={TrendingUp}
-            iconColor="bg-emerald-50 text-emerald-600"
-            label="صافي التركة القابلة للتوزيع على الورثة"
-            value={displayNetEstate}
-            valueColor="text-emerald-700 font-black text-sm"
-            highlight
-          />
-        </div>
-      </Card>
-
-      {/* Charts Section */}
-      <Card className="rounded-2xl border border-default-200 bg-white p-5 text-right shadow-xs">
-        <h3 className="text-xs font-black flex items-center gap-1.5 mb-4 text-foreground">
-          <PieIcon size={15} className="text-amber-600" />
-          <span>الرسم البياني وتوزيع الأنصبة</span>
-        </h3>
-
-        {hasWillsOrDebts ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Chart 1: Estate Allocation */}
-            <div className="flex flex-col items-center">
-              <span className="text-[11px] font-black text-muted-foreground mb-2 text-center">تقسيم التركة الإجمالية</span>
-              <div className="relative h-48 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                    <Pie
-                      data={estateAllocationData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="46%"
-                      outerRadius="72%"
-                      paddingAngle={estateAllocationData.length > 1 ? 3 : 0}
-                      dataKey="value"
-                    >
-                      {estateAllocationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={ALLOC_COLORS[index % ALLOC_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val) => `${Number(val).toLocaleString()} د.م.`}
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: '10px', fontSize: '11px', textAlign: 'right' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2 mt-2">
-                {estateAllocationData.map((entry, idx) => (
-                  <div key={idx} className="flex items-center gap-1 text-[10px] font-bold text-foreground">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ALLOC_COLORS[idx % ALLOC_COLORS.length] }} />
-                    <span>{entry.name}</span>
-                    <span className="text-muted-foreground font-mono">(%{entry.percentage.toFixed(1)})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Chart 2: Family Shares */}
-            <div className="flex flex-col items-center">
-              <span className="text-[11px] font-black text-muted-foreground mb-2 text-center">توزيع أنصبة الورثة</span>
-              <div className="relative h-48 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                    <Pie
-                      data={familyPieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="46%"
-                      outerRadius="72%"
-                      paddingAngle={familyPieData.length > 1 ? 3 : 0}
-                      dataKey="value"
-                    >
-                      {familyPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val) => `${Number(val).toLocaleString()} د.م.`}
-                      contentStyle={{ backgroundColor: '#ffffff', borderRadius: '10px', fontSize: '11px', textAlign: 'right' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2 mt-2">
-                {familyPieData.map((entry, idx) => (
-                  <div key={idx} className="flex items-center gap-1 text-[10px] font-bold text-foreground">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                    <span>{entry.name}</span>
-                    <span className="text-muted-foreground font-mono">(%{entry.percentage.toFixed(1)})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full max-w-sm mx-auto flex flex-col items-center">
-            <div className="relative h-48 w-full flex items-center justify-center">
+          <div className="bg-white/50 border border-primary-950/20 rounded-xl p-4 flex flex-col items-center justify-center">
+            {/* Donut Chart */}
+            <div className="relative h-44 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                   <Pie
-                    data={familyPieData}
+                    data={chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius="46%"
-                    outerRadius="72%"
-                    paddingAngle={familyPieData.length > 1 ? 3 : 0}
+                    innerRadius="50%"
+                    outerRadius="75%"
+                    paddingAngle={(chartMode === 'estate' ? estateAllocationData.length : familyPieData.length) > 1 ? 2 : 0}
                     dataKey="value"
                   >
-                    {familyPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {(chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData).map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          chartMode === 'estate' && hasWillsOrDebts
+                            ? ALLOC_COLORS[index % ALLOC_COLORS.length]
+                            : CHART_COLORS[index % CHART_COLORS.length]
+                        }
+                      />
                     ))}
                   </Pie>
                   <Tooltip
                     formatter={(val) => `${Number(val).toLocaleString()} د.م.`}
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '10px', fontSize: '11px', textAlign: 'right' }}
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      textAlign: 'right',
+                      border: '1px solid rgba(0,0,0,0.1)'
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
+
+              {/* Center Estate Info */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <span className="text-[10px] font-bold text-muted-foreground leading-tight">
+                  {chartMode === 'estate' && hasWillsOrDebts ? 'إجمالي التركة' : 'صافي الورثة'}
+                </span>
+                <span className="text-xs font-black font-mono text-primary-950 mt-0.5">
+                  {formatCurrency(chartMode === 'estate' && hasWillsOrDebts ? result.total_estate : displayNetEstate)}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {familyPieData.map((entry, idx) => (
-                <div key={idx} className="flex items-center gap-1 text-[10px] font-bold text-foreground">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                  <span>{entry.name}</span>
-                  <span className="text-muted-foreground font-mono">(%{entry.percentage.toFixed(1)})</span>
+
+            {/* Percentage Legend */}
+            <div className="w-full flex flex-col gap-1 mt-3 pt-3 border-t border-primary-950/10">
+              {(chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData).map((entry, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-xs py-0.5 text-primary-950"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span
+                      className="size-2 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          chartMode === 'estate' && hasWillsOrDebts
+                            ? ALLOC_COLORS[idx % ALLOC_COLORS.length]
+                            : CHART_COLORS[idx % CHART_COLORS.length]
+                      }}
+                    />
+                    <span className="truncate font-bold text-[11px]">{entry.name}</span>
+                  </div>
+                  <span className="font-mono font-bold text-[11px] shrink-0">
+                    %{entry.percentage.toFixed(2)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-        )}
-      </Card>
-
-      {/* Heirs Table */}
-      <Card className="rounded-2xl border border-default-200 bg-white p-5 text-right shadow-xs overflow-hidden">
-        <h3 className="text-xs font-black flex items-center gap-1.5 mb-3 text-foreground">
-          <Users size={15} className="text-amber-600" />
-          <span>أنصبة الورثة المستحقين</span>
-        </h3>
-
-        <div className="overflow-x-auto border border-default-100 rounded-xl">
-          <table className="w-full border-collapse text-right text-xs">
-            <thead>
-              <tr className="border-b border-default-150 font-bold text-muted-foreground bg-default-50/70">
-                <th className="py-2.5 px-3">الوارث</th>
-                <th className="py-2.5 px-3 text-center">العدد</th>
-                <th className="py-2.5 px-3 text-center">الفرض / السهم</th>
-                <th className="py-2.5 px-3 text-center">النسبة</th>
-                <th className="py-2.5 px-3 text-center">نصيب الفرد</th>
-                <th className="py-2.5 px-3 text-left">إجمالي الفئة</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-default-100">
-              {heirsDistributions.map((dist, idx) => {
-                const indPercentage = dist.individual_percentage ?? dist.percentage;
-                return (
-                  <tr key={idx} className="hover:bg-default-50/50 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-foreground">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                        <span>{dist.relationship_display}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-semibold text-muted-foreground">
-                      {dist.count}
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-black text-amber-700">
-                      {dist.individual_share_fraction || dist.share_fraction}
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-bold text-foreground">
-                      %{indPercentage.toFixed(2)}
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-bold text-amber-600">
-                      {formatCurrency(dist.per_person_value)}
-                    </td>
-                    <td className="py-2.5 px-3 text-left font-mono font-extrabold text-foreground">
-                      {formatCurrency(dist.total_value)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         </div>
-      </Card>
 
-      {/* Wills Table if any */}
-      {willsDistributions.length > 0 && (
-        <Card className="rounded-2xl border border-default-200 bg-white p-5 text-right shadow-xs overflow-hidden">
-          <h3 className="text-xs font-black flex items-center gap-1.5 mb-3 text-foreground">
-            <FileText size={15} className="text-purple-600" />
-            <span>الوصايا الشرعية المنفذة</span>
-          </h3>
+        {/* Heirs Table - 8 Cols */}
+        <div className="lg:col-span-8 flex flex-col gap-2">
+          <span className="text-sm font-bold text-muted-foreground block text-right">
+            أنصبة الورثة المستحقين
+          </span>
 
-          <div className="overflow-x-auto border border-default-100 rounded-xl">
+          <div className="overflow-x-auto bg-white/50 border border-primary-950/20 rounded-xl">
             <table className="w-full border-collapse text-right text-xs">
               <thead>
-                <tr className="border-b border-default-150 font-bold text-muted-foreground bg-default-50/70">
-                  <th className="py-2.5 px-3">الوصية</th>
-                  <th className="py-2.5 px-3 text-center">نصيب الوصية</th>
-                  <th className="py-2.5 px-3 text-center">النسبة</th>
-                  <th className="py-2.5 px-3 text-left">المبلغ</th>
+                <tr className="border-b border-primary-950/15 font-bold text-primary-950 bg-primary-950/5">
+                  <th className="py-3 px-3 text-right">الوارث</th>
+                  <th className="py-3 px-2 text-center">عدد الأفراد</th>
+                  <th className="py-3 px-2 text-center">نصيب الفرد</th>
+                  <th className="py-3 px-2 text-center">نصيب الفرد مئوياً</th>
+                  <th className="py-3 px-3 text-center">نصيب الفرد (مال)</th>
+                  <th className="py-3 px-3 text-left">إجمالي الفئة</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-default-100">
+              <tbody className="divide-y divide-primary-950/10">
+                {heirsDistributions.map((dist, idx) => {
+                  const indPercentage = dist.individual_percentage ?? dist.percentage;
+                  return (
+                    <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                      {/* Heir Name */}
+                      <td className="py-3 px-3 font-bold text-primary-950">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                          />
+                          <span>{dist.relationship_display}</span>
+                        </div>
+                      </td>
+
+                      {/* Count */}
+                      <td className="py-3 px-2 text-center font-mono font-bold text-muted-foreground">
+                        {dist.count}
+                      </td>
+
+                      {/* Share Fraction */}
+                      <td className="py-3 px-2 text-center font-mono font-black text-primary-950">
+                        {dist.individual_share_fraction || dist.share_fraction}
+                      </td>
+
+                      {/* Percentage */}
+                      <td className="py-3 px-2 text-center font-mono font-bold text-primary-950">
+                        %{indPercentage.toFixed(2)}
+                      </td>
+
+                      {/* Individual Cash */}
+                      <td className="py-3 px-3 text-center font-mono font-bold text-primary-950">
+                        {formatCurrency(dist.per_person_value)}
+                      </td>
+
+                      {/* Total Cash */}
+                      <td className="py-3 px-3 text-left font-mono font-black text-primary-950">
+                        {formatCurrency(dist.total_value)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Wills Section if any */}
+      {willsDistributions.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-bold text-muted-foreground block text-right">
+            الوصايا           </span>
+
+          <div className="overflow-x-auto bg-white/50 border border-primary-950/20 rounded-xl">
+            <table className="w-full border-collapse text-right text-xs">
+              <thead>
+                <tr className="border-b border-primary-950/15 font-bold text-primary-950 bg-primary-950/5">
+                  <th className="py-2.5 px-3">الوصية / المستفيد</th>
+                  <th className="py-2.5 px-3 text-center">النسبة المقتطعة</th>
+                  <th className="py-2.5 px-3 text-left">المبلغ المقتطع</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-950/10">
                 {willsDistributions.map((dist, idx) => (
-                  <tr key={idx} className="hover:bg-default-50/50 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-foreground">
+                  <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                    <td className="py-2.5 px-3 font-bold text-primary-950">
                       {dist.relationship_display}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-black text-purple-700">
-                      {dist.share_fraction}
+
+                    <td className="py-2.5 px-3 text-center font-mono font-black text-primary-950">
+                      %{dist.percentage.toFixed(2)} {dist.share_fraction && `(${dist.share_fraction})`}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-bold text-foreground">
-                      %{dist.percentage.toFixed(2)}
-                    </td>
-                    <td className="py-2.5 px-3 text-left font-mono font-extrabold text-foreground">
+                    <td className="py-2.5 px-3 text-left font-mono font-extrabold text-primary-950">
                       {formatCurrency(dist.total_value)}
                     </td>
                   </tr>
@@ -496,77 +489,132 @@ export default function StepResults({
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
+      )}
+
+      {/* Debts Section if any */}
+      {activeDebtsList.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-bold text-muted-foreground block text-right">
+            تفاصيل الديون والالتزامات المالية المقتطعة
+          </span>
+
+          <div className="overflow-x-auto bg-white/50 border border-primary-950/20 rounded-xl">
+            <table className="w-full border-collapse text-right text-xs">
+              <thead>
+                <tr className="border-b border-primary-950/15 font-bold text-primary-950 bg-primary-950/5">
+                  <th className="py-2.5 px-3">بيان الدين / الالتزام</th>
+                  <th className="py-2.5 px-3 text-center">النوع</th>
+                  <th className="py-2.5 px-3 text-left">المبلغ المسدد</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-950/10">
+                {activeDebtsList.map((debt, idx) => (
+                  <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                    <td className="py-2.5 px-3 font-bold text-primary-950">
+                      {debt.description || `دين رقم ${idx + 1}`}
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-bold text-muted-foreground">
+                      {debt.type === 'funeral'
+                        ? 'مؤن التجهيز'
+                        : debt.type === 'mortgage'
+                          ? 'دين عيني برهن'
+                          : debt.type === 'allah'
+                            ? 'حق لله تعالى'
+                            : 'دين عادي'}
+                    </td>
+                    <td className="py-2.5 px-3 text-left font-mono font-extrabold text-red-700">
+                      {formatCurrency(Number(debt.amount))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Detailed Calculation Steps Trigger Card */}
-      <div
-        onClick={() => setIsDrawerOpen(true)}
-        className="rounded-2xl border border-amber-200 bg-linear-to-r from-amber-50/80 to-amber-100/30 hover:bg-amber-100/50 p-4 transition-all duration-150 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-right"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <ScrollText size={18} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-xs sm:text-sm font-black text-foreground">
-                خطوات الحل والشرح الفقهي التفصيلي للمسألة
-              </h4>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-200/70 text-amber-900 rounded-md font-mono">
-                {stepsCount} مراحل
-              </span>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              عرض الأدلة الشرعية، قواعد الحجب، تأصيل الفروض وتصحيح السهام
-            </p>
-          </div>
+      <div className="bg-white/50 border border-primary-950/20 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col text-center sm:text-right">
+          <span className="text-xs sm:text-sm font-extrabold text-primary-950">
+            خطوات الحل والشرح التفصيلي للمسألة
+          </span>
+          <span className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+            عرض الأدلة الفقهية، قواعد الحجب، تأصيل الفروض، وتصحيح الأنصبة
+          </span>
         </div>
 
         <Button
           onPress={() => setIsDrawerOpen(true)}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 h-8 rounded-xl flex items-center gap-1 shrink-0 self-end sm:self-auto"
+          className="bg-primary-950 hover:bg-primary-900 text-secondary-200 font-bold text-xs px-5 py-2.5 rounded-lg border border-secondary-200/30 flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <span>عرض الخطوات</span>
           <ChevronLeft size={14} />
         </Button>
       </div>
 
-      <DetailedCalculationDrawer
+      <DetailedCalculationDrawerV3
         result={result}
         isOpen={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
       />
 
-      {/* Action Buttons: Share, PDF, Excel, Back & Reset */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-        <Button
-          variant="outline"
-          onPress={copyShareLink}
-          className="font-bold border-default-300 rounded-xl h-11 text-xs flex items-center justify-center gap-1.5"
-        >
-          <Share2 size={15} />
-          <span>{copied ? 'تم نسخ الرابط!' : 'مشاركة الرابط'}</span>
-        </Button>
+      {/* Bottom Bar: Summary & Sharing/Export Actions */}
+      <div className="bg-white/50 border border-primary-950/20 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Left / Info: Share Header */}
+        <div className="flex flex-col text-center sm:text-right">
+          <span className="text-xs sm:text-sm font-extrabold text-primary-950">
+            مشاركة وتصدير
+          </span>
+          <span className="text-[11px] text-muted-foreground mt-0.5">
+            احفظ المسألة أو شارك التقرير الشرعي مع العائلة
+          </span>
+        </div>
 
-        <Button
-          onPress={handlePreviewPdf}
-          isDisabled={loadingPdf}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl h-11 text-xs flex items-center justify-center gap-1.5 shadow-xs"
-        >
-          <FileText size={15} />
-          <span>{loadingPdf ? 'جاري التجهيز...' : 'معاينة PDF'}</span>
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex items-center flex-wrap justify-center gap-2">
+          {/* Copy Link Button */}
+          <Button
+            onPress={copyShareLink}
+            className="bg-white hover:bg-primary-950/5 text-primary-950 border border-primary-950/10 px-3.5  rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <Check size={14} className="stroke-3" />
+                <span>تم النسخ!</span>
+              </>
+            ) : (
+              <>
+                <Share2 size={14} />
+                <span>نسخ رابط المسألة</span>
+              </>
+            )}
+          </Button>
 
-        <Button
-          onPress={handleExportExcel}
-          isDisabled={exportingExcel}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-11 text-xs flex items-center justify-center gap-1.5 shadow-xs"
-        >
-          <BarChart3 size={15} />
-          <span>{exportingExcel ? 'جاري التصدير...' : 'تصدير Excel'}</span>
-        </Button>
+          {/* PDF Preview Button */}
+          <Button
+            onPress={handlePreviewPdf}
+            isDisabled={loadingPdf}
+            className="bg-secondary-400 hover:bg-secondary-500 text-white px-3.5  rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <FileText size={14} />
+            <span>{loadingPdf ? 'جاري التجهيز...' : 'معاينة تقرير PDF'}</span>
+          </Button>
+
+          {/* Excel Export Button */}
+          <Button
+            onPress={handleExportExcel}
+            isDisabled={exportingExcel}
+            className="bg-[#2e7d32] hover:bg-[#256629] text-white px-3.5  rounded-full  font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <FileSpreadsheet size={14} />
+            <span>{exportingExcel ? 'جاري التصدير...' : 'تصدير EXCEL'}</span>
+          </Button>
+        </div>
       </div>
+
+
     </motion.div>
   );
 }

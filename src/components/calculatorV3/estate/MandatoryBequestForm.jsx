@@ -12,7 +12,7 @@ export default function MandatoryBequestForm({
   errors = {}
 }) {
   return (
-    <div className="space-y-4 bg-white/50 p-4 rounded-xl">
+    <div className="flex flex-col gap-4 bg-white/50 p-4 rounded-xl border border-primary-950/10">
       {/* Switch Card */}
       <div
         onClick={() => {
@@ -120,7 +120,7 @@ export default function MandatoryBequestForm({
                     }
                   ])
                 }
-                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/20 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus size={15} />
                 <span>إضافة أولاد ابن متوفى</span>
@@ -141,7 +141,7 @@ export default function MandatoryBequestForm({
                     }
                   ])
                 }
-                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/30 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full flex-1 py-1.5 px-4 rounded-lg bg-transparent border border-dashed border-primary-950/20 hover:bg-primary-950/5 text-primary-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus size={15} />
                 <span>إضافة أولاد بنت متوفية</span>
@@ -183,7 +183,7 @@ export default function MandatoryBequestForm({
                         );
                         setMandatoryBequests(updated);
                       }}
-                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 bg-white/30 text-primary-950 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right"
+                      className="w-full px-3 py-2 rounded-lg border border-primary-950/20 bg-white/50 text-primary-950 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right"
                     />
                   </div>
 
@@ -195,7 +195,7 @@ export default function MandatoryBequestForm({
                       setMandatoryBequests(updated);
                     }}
                     aria-label="حذف الفرع"
-                    className="rounded-lg shrink-0 text-primary-950 bg-white border border-neutral-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-400"
+                    className="rounded-lg shrink-0 text-primary-950 bg-white border border-primary-950/20 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-400"
                   >
                     <Trash2 size={15} />
                   </Button>
@@ -246,7 +246,7 @@ export default function MandatoryBequestForm({
                   </div>
 
                   {/* Daughters Counter */}
-                  <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/30">
+                  <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/20">
                     <span className="text-xs font-bold text-primary-950">
                       {mb.type === 'son' ? 'بناته (بنت ابن)' : 'بناتها (بنت بنت)'}
                     </span>
@@ -290,7 +290,7 @@ export default function MandatoryBequestForm({
                   {/* Great Grandchildren Counters (Only for Son) */}
                   {mb.type === 'son' && (
                     <>
-                      <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/30">
+                      <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/20">
                         <span className="text-xs font-bold text-primary-950">أبناء ابنه (ابن ابن ابن)</span>
                         <div className="flex items-center gap-1.5">
                           <Button
@@ -329,7 +329,7 @@ export default function MandatoryBequestForm({
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/30">
+                      <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/20">
                         <span className="text-xs font-bold text-primary-950">بنات ابنه (بنت ابن ابن)</span>
                         <div className="flex items-center gap-1.5">
                           <Button
@@ -371,7 +371,7 @@ export default function MandatoryBequestForm({
                   )}
 
                   {/* Mother Status */}
-                  <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/30">
+                  <div className="flex items-center justify-between px-2 py-1 bg-white/30 rounded-lg border border-primary-950/20">
                     <span className="text-xs font-bold text-primary-950">
                       {mb.type === 'son' ? 'أم الابن المتوفى؟' : 'أم البنت المتوفية؟'}
                     </span>
@@ -388,7 +388,7 @@ export default function MandatoryBequestForm({
                           'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                           mb.motherAlive !== false
                             ? 'bg-primary-950 text-white'
-                            : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                            : 'bg-white/50 text-primary-950 border border-primary-950/20'
                         )}
                       >
                         على قيد الحياة
@@ -405,7 +405,7 @@ export default function MandatoryBequestForm({
                           'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                           mb.motherAlive === false
                             ? 'bg-primary-950 text-white'
-                            : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                            : 'bg-white/50 text-primary-950 border border-primary-950/20'
                         )}
                       >
                         متوفاة
@@ -414,7 +414,7 @@ export default function MandatoryBequestForm({
                   </div>
 
                   {/* Spouse Status */}
-                  <div className="flex items-center justify-between py-1 px-2 bg-white/30 rounded-lg border border-primary-950/30">
+                  <div className="flex items-center justify-between py-1 px-2 bg-white/30 rounded-lg border border-primary-950/20">
                     <span className="text-xs font-bold text-primary-950">
                       {mb.type === 'son' ? 'أرملة هذا الابن؟' : 'أرمل هذه البنت؟'}
                     </span>
@@ -431,7 +431,7 @@ export default function MandatoryBequestForm({
                           'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                           mb.spouseAlive !== false
                             ? 'bg-primary-950 text-white'
-                            : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                            : 'bg-white/50 text-primary-950 border border-primary-950/20'
                         )}
                       >
                         على قيد الحياة
@@ -448,7 +448,7 @@ export default function MandatoryBequestForm({
                           'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                           mb.spouseAlive === false
                             ? 'bg-primary-950 text-white'
-                            : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                            : 'bg-white/50 text-primary-950 border border-primary-950/20'
                         )}
                       >
                         {mb.type === 'son' ? 'متوفاة' : 'متوفى'}
@@ -458,7 +458,7 @@ export default function MandatoryBequestForm({
 
                   {/* Great Spouse Status */}
                   {mb.type === 'son' && ((mb.greatSonsCount || 0) > 0 || (mb.greatDaughtersCount || 0) > 0) && (
-                    <div className="flex items-center justify-between py-1 px-2 bg-white/30 rounded-lg border border-primary-950/30">
+                    <div className="flex items-center justify-between py-1 px-2 bg-white/30 rounded-lg border border-primary-950/20">
                       <span className="text-xs font-bold text-primary-950">أرملة ابن الابن؟</span>
                       <div className="flex gap-1.5">
                         <button
@@ -473,7 +473,7 @@ export default function MandatoryBequestForm({
                             'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                             mb.greatSpouseAlive !== false
                               ? 'bg-primary-950 text-white'
-                              : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                              : 'bg-white/50 text-primary-950 border border-primary-950/20'
                           )}
                         >
                           على قيد الحياة
@@ -490,7 +490,7 @@ export default function MandatoryBequestForm({
                             'px-2.5 py-0.5 text-xs font-bold rounded-md transition-all cursor-pointer',
                             mb.greatSpouseAlive === false
                               ? 'bg-primary-950 text-white'
-                              : 'bg-white/50 text-primary-950 border border-primary-950/30'
+                              : 'bg-white/50 text-primary-950 border border-primary-950/20'
                           )}
                         >
                           متوفاة

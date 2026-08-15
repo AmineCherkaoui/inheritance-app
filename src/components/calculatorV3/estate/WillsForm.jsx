@@ -14,7 +14,7 @@ export default function WillsForm({
   errors = {}
 }) {
   return (
-    <div className="flex flex-col gap-4 bg-white/50 p-4 rounded-xl">
+    <div className="flex flex-col gap-4 bg-white/50 p-4 rounded-xl  border border-primary-950/10">
       {/* Title */}
       <div className="space-y-1">
         <label className=" text-primary-950 font-bold text-muted-foreground flex items-center gap-2 justify-start text-right">
@@ -52,7 +52,7 @@ export default function WillsForm({
                     value={will.name}
                     placeholder={`اسم الوصية`}
                     onChange={(e) => updateWill(will.id, 'name', e.target.value)}
-                    className="w-full pr-4 px-4 py-2 rounded-lg border border-neutral-200 bg-white/80 text-primary-950 text-sm font-semibold focus:outline-none focus:border-primary-950 focus:ring-1 focus:ring-primary-950 transition-all text-right"
+                    className="w-full pr-4 px-4 py-2 rounded-lg border border-primary-950/20 bg-white/50 text-primary-950 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary-950 transition-all text-right"
                   />
                 </div>
 
@@ -67,7 +67,7 @@ export default function WillsForm({
                     }}
                     isInvalid={!!errors[will.id]}
                   >
-                    <Select.Trigger className="w-full py-1.5 px-3 rounded-lg border border-neutral-200 bg-white/80 text-primary-950 text-sm font-semibold transition-all outline-none focus:outline-none focus:!border-primary-950 focus:!ring-1 focus:!ring-primary-950 data-[open=true]:!border-primary-950 data-[open=true]:!ring-1 data-[open=true]:!ring-primary-950 data-[focus-visible=true]:!border-primary-950 data-[focus-visible=true]:!ring-1 data-[focus-visible=true]:!ring-primary-950 aria-expanded:!border-primary-950 aria-expanded:!ring-1 aria-expanded:!ring-primary-950 shadow-none">
+                    <Select.Trigger className="w-full py-1.5 px-3 rounded-lg border border-primary-950/20 bg-white/80 text-primary-950 text-sm font-semibold transition-all outline-none focus:outline-none focus:!ring-1 focus:!ring-primary-950 data-[open=true]:!ring-1 data-[open=true]:!ring-primary-950 data-[focus-visible=true]:!ring-1 data-[focus-visible=true]:!ring-primary-950 aria-expanded:!ring-1 aria-expanded:!ring-primary-950 shadow-none">
                       <Select.Value />
                       <Select.Indicator />
                     </Select.Trigger>
@@ -100,7 +100,7 @@ export default function WillsForm({
                   isIconOnly
                   onPress={() => removeWill(will.id)}
                   aria-label="حذف الوصية"
-                  className="rounded-lg shrink-0 text-primary-950 bg-white border border-neutral-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-400"
+                  className="rounded-lg shrink-0 text-primary-950 bg-white border border-primary-950/20 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-400"
                 >
                   <Trash2 size={16} />
                 </Button>

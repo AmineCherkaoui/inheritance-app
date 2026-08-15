@@ -479,9 +479,9 @@ export default function CalculatorPageV3() {
       <AppBackground />
 
       {/* Main Container Layout: Sidebar on Right + Main Wizard on Left */}
-      <main className="relative z-1 flex-1 grid grid-cols-1 lg:grid-cols-3 items-start gap-24 max-w-7xl w-full mx-auto p-2 sm:p-4">
+      <main className="relative z-1 flex-1 grid grid-cols-1 lg:grid-cols-3 items-start gap-12 max-w-11/12 w-full mx-auto p-2 sm:p-4">
         {/* Right Side: Step Sidebar */}
-        <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-4">
+        <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-4 justify-self-center ">
           <StepSidebar
             currentStepIndex={currentParentStep}
             onStepClick={handleSidebarStepClick}
