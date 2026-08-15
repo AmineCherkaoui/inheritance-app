@@ -75,7 +75,7 @@ export default function DetailedCalculationDrawerV3({ result, isOpen, onOpenChan
     <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
       <Drawer.Content placement="right" className="max-w-full w-full h-full">
         <Drawer.Dialog
-          className="max-w-6/12 w-full h-full bg-secondary-50 border-l border-primary-950/20 flex flex-col shadow-2xl text-primary-950 font-sans"
+          className="lg:max-w-6/12  w-full h-full bg-secondary-50 border-l border-primary-950/20 flex flex-col shadow-2xl text-primary-950 font-sans"
           dir="rtl"
         >
           {/* Header */}
