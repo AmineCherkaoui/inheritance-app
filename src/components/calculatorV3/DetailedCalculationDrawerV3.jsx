@@ -73,15 +73,15 @@ export default function DetailedCalculationDrawerV3({ result, isOpen, onOpenChan
 
   return (
     <Drawer.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Drawer.Content placement="right" className="max-w-full w-full h-full">
+      <Drawer.Content placement="right" className="max-w-full w-full h-full ">
         <Drawer.Dialog
-          className="lg:max-w-6/12  w-full h-full bg-secondary-50 border-l border-primary-950/20 flex flex-col shadow-2xl text-primary-950 font-sans"
+          className=" relative w-full max-w-4xl h-full bg-secondary-50 border-l border-primary-950/20 flex flex-col shadow-2xl text-primary-950 pb-0 px-2 "
           dir="rtl"
         >
           {/* Header */}
-          <div className="relative border-b border-primary-950/15 p-5 sm:p-6 ">
-            <Drawer.CloseTrigger className="absolute top-0 left-0 p-2 rounded-full text-primary-950/70 hover:text-primary-950 hover:bg-primary-950/5 transition-colors cursor-pointer">
-              <X size={20} />
+          <div className=" relative pb-4">
+            <Drawer.CloseTrigger className="absolute top-0 right-[95%]  p-2 rounded-full text-primary-950/70 hover:text-primary-950 hover:bg-primary-950/5 transition-colors cursor-pointer">
+              <X size={32} className='stroke-3' />
             </Drawer.CloseTrigger>
 
             <div className="flex items-center gap-3">
