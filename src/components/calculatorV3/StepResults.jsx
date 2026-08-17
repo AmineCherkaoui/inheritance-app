@@ -192,7 +192,7 @@ export default function StepResults({
     if (exportingExcel) return;
     setExportingExcel(true);
     try {
-      await exportExcelReport(result);
+      await exportExcelReport(result, stateSnapshot);
     } catch (e) {
       console.error('Failed to export Excel', e);
     } finally {
