@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import saveAs from 'file-saver';
+import { downloadBlob } from '../utils';
 
 export async function exportExcelReport(result) {
   try {
@@ -276,7 +276,7 @@ export async function exportExcelReport(result) {
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), `تقرير_الميراث_${result.deceased_name}.xlsx`);
+    downloadBlob(new Blob([buffer]), `تقرير_الميراث_${result.deceased_name}.xlsx`);
   } catch (e) {
     console.error('Excel export failed internally', e);
     throw e;

@@ -262,3 +262,24 @@ export const generateQRCodeWithLogo = async (text) => {
   }
 };
 
+export const downloadBlob = (blob, filename) => {
+  if (typeof window === 'undefined') return;
+  const fileBlob = blob instanceof Blob ? blob : new Blob([blob]);
+  // Force octet-stream so iOS Safari and mobile browsers trigger the download manager prompt instead of opening in-tab
+  const streamBlob = new Blob([fileBlob], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(streamBlob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1500);
+};
+
+
+

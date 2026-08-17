@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Button } from '@heroui/react';
 import {
-  Scale, ShieldAlert, FileText,
+  Scale, ShieldAlert, FileText, Download,
   FileSpreadsheet, Share2, ChevronLeft,
   ShieldCheck, Check, Banknote,
   TrendingDown, ScrollText, PieChart as PieIcon
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { serializeState, generateQRCodeWithLogo, cn } from '../../utils';
+import { serializeState, generateQRCodeWithLogo, cn, downloadBlob } from '../../utils';
 import { ROUTES } from '../../constants/links';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from '../PdfReport';
@@ -126,7 +126,7 @@ export default function StepResults({
   const hasWillsOrDebts = result.total_wills_cost > 0 || result.deductions > 0;
   const isMandatory = result.mandatory_bequest_steps && result.mandatory_bequest_steps.length > 0;
 
-  // Extract debt items if present in snapshot
+
   const rawDebts = stateSnapshot.debts || [];
   const activeDebtsList = Array.isArray(rawDebts)
     ? rawDebts.filter((d) => Number(d.amount) > 0)
@@ -166,7 +166,7 @@ export default function StepResults({
     document.body.removeChild(textArea);
   };
 
-  const handlePreviewPdf = async () => {
+  const handleDownloadPdf = async () => {
     if (loadingPdf) return;
     setLoadingPdf(true);
     try {
@@ -179,10 +179,10 @@ export default function StepResults({
           qrCodeDataUrl={qrCodeDataUrl}
         />
       ).toBlob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const fileName = `تقرير_الميراث_${result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}.pdf`;
+      downloadBlob(blob, fileName);
     } catch (err) {
-      console.error('PDF preview failed', err);
+      console.error('PDF download failed', err);
     } finally {
       setLoadingPdf(false);
     }
@@ -593,21 +593,21 @@ export default function StepResults({
             )}
           </Button>
 
-          {/* PDF Preview Button */}
+          {/* PDF Download Button */}
           <Button
-            onPress={handlePreviewPdf}
+            onPress={handleDownloadPdf}
             isDisabled={loadingPdf}
             className="bg-secondary-400 hover:bg-secondary-500 text-white px-3.5  rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <FileText size={14} />
-            <span>{loadingPdf ? 'جاري التجهيز...' : 'معاينة تقرير PDF'}</span>
+            <Download size={14} />
+            <span>{loadingPdf ? 'جاري التحميل...' : 'تحميل تقرير PDF'}</span>
           </Button>
 
           {/* Excel Export Button */}
           <Button
             onPress={handleExportExcel}
             isDisabled={exportingExcel}
-            className="bg-[#2e7d32] hover:bg-[#256629] text-white px-3.5  rounded-full  font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5  rounded-full  font-bold text-xs flex items-center gap-1.5 cursor-pointer"
           >
             <FileSpreadsheet size={14} />
             <span>{exportingExcel ? 'جاري التصدير...' : 'تصدير EXCEL'}</span>

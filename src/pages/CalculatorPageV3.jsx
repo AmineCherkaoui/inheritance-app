@@ -514,8 +514,8 @@ export default function CalculatorPageV3() {
             />
           </div>
 
-          <div className="flex-1 flex flex-col justify-between gap-4 h-full w-full ">
-            <div className="flex flex-col gap-4 my-auto w-full pt-6 lg:pt-0">
+          <div className="flex-1 flex flex-col justify-between gap-4 h-full w-full  ">
+            <div className="flex flex-col gap-4 my-auto w-full pt-6 lg:pt-6">
               {/* Title Header with Calligraphic Framing */}
               <div className="text-center space-y-1 max-w-md flex mx-auto">
                 <img src="/images/title-header.png" alt="Title Header" className="w-full" />

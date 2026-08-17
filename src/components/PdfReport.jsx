@@ -1,6 +1,8 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
+const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+
 // Register Tajawal Font from local public directory
 Font.register({
   family: 'Tajawal',
