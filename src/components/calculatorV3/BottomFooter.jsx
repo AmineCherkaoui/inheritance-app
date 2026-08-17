@@ -13,15 +13,15 @@ export default function BottomFooter() {
     <footer className="w-full space-y-4 pt-4 shrink-0">
 
 
-      <div className="w-full bg-secondary-400/20  py-4 px-4 flex flex-wrap items-center justify-around gap-4 text-xs font-extrabold text-amber-950">
+      <div className="w-full bg-secondary-400/20  py-4 px-4 grid grid-cols-2 sm:grid-cols-4 justify-items-center  gap-4 text-xs font-extrabold text-amber-950">
         {badges.map((b, idx) => {
           const Icon = b.icon;
           return (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} className="flex flex-col sm:flex-row items-center gap-2">
               <div className="size-10 rounded-full bg-secondary-200 flex items-center justify-center shrink-0 text-primary-950">
                 <Icon size={24} />
               </div>
-              <span>{b.label}</span>
+              <span className='text-center'>{b.label}</span>
             </div>
           );
         })}

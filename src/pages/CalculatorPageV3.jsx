@@ -5,19 +5,20 @@ import { deserializeState, cn } from '../utils';
 import { InheritanceCalculator } from '../engine';
 
 // Modular Components for V3
-import TopNav from './calculatorV3/TopNav';
-import StepSidebar from './calculatorV3/StepSidebar';
-import StepDeceasedInfo from './calculatorV3/StepDeceasedInfo';
-import MiniStepEstateDebts from './calculatorV3/estate/MiniStepEstateDebts';
-import MiniStepWills from './calculatorV3/estate/MiniStepWills';
-import MiniStepSpouse from './calculatorV3/heirs/MiniStepSpouse';
-import MiniStepChildren from './calculatorV3/heirs/MiniStepChildren';
-import MiniStepParents from './calculatorV3/heirs/MiniStepParents';
-import MiniStepCategoryHeirs from './calculatorV3/heirs/MiniStepCategoryHeirs';
-import StepResults from './calculatorV3/StepResults';
-import BottomFooter from './calculatorV3/BottomFooter';
-import AppBackground from './AppBackground';
-import { isHeirBlocked, HEIR_CATEGORIES } from './calculatorV3/heirConstants';
+import TopNav from '../components/calculatorV3/TopNav';
+import StepSidebar from '../components/calculatorV3/StepSidebar';
+import StepDeceasedInfo from '../components/calculatorV3/StepDeceasedInfo';
+import MiniStepEstateDebts from '../components/calculatorV3/estate/MiniStepEstateDebts';
+import MiniStepWills from '../components/calculatorV3/estate/MiniStepWills';
+import MiniStepSpouse from '../components/calculatorV3/heirs/MiniStepSpouse';
+import MiniStepChildren from '../components/calculatorV3/heirs/MiniStepChildren';
+import MiniStepParents from '../components/calculatorV3/heirs/MiniStepParents';
+import MiniStepCategoryHeirs from '../components/calculatorV3/heirs/MiniStepCategoryHeirs';
+import StepResults from '../components/calculatorV3/StepResults';
+import BottomFooter from '../components/calculatorV3/BottomFooter';
+import AppBackground from '../components/AppBackground';
+import { isHeirBlocked, HEIR_CATEGORIES } from '../components/calculatorV3/heirConstants';
+import MobileNav from '../components/calculatorV3/MobileNav';
 
 const ALL_MINI_STEPS = [
   // Parent Step 0 (بيانات حالة المتوفى)
@@ -216,7 +217,6 @@ export default function CalculatorPageV3() {
       });
     }
   };
-
 
   const addWill = () => {
     setWills((prev) => [
@@ -477,11 +477,22 @@ export default function CalculatorPageV3() {
       dir="rtl"
     >
       <AppBackground />
+      <div className="lg:hidden bg-primary-950/80 py-2 px-4 sticky top-0 backdrop-blur-sm border-b border-primary-950 z-50 flex items-center justify-between">
+        <MobileNav
+          currentStepIndex={currentParentStep}
+          onStepClick={handleSidebarStepClick}
+          canNavigateToStep={canNavigateToStep}
+          onReset={resetAll}
+        />
+        <div className="flex items-center gap-2">
+          <img src="/images/logo.svg" alt="Logo" className="h-12 w-auto" />
+        </div>
+      </div>
 
       {/* Main Container Layout: Sidebar on Right + Main Wizard on Left */}
-      <main className="relative z-1 flex-1 grid grid-cols-1 lg:grid-cols-3 items-start gap-12 max-w-11/12 w-full mx-auto p-2 sm:p-4">
+      <main className="relative z-1 flex-1 grid grid-cols-1 lg:grid-cols-3 items-start gap-24 max-w-11/12 w-full mx-auto p-2 sm:p-4">
         {/* Right Side: Step Sidebar */}
-        <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-4 justify-self-center ">
+        <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-4 justify-self-end">
           <StepSidebar
             currentStepIndex={currentParentStep}
             onStepClick={handleSidebarStepClick}
@@ -491,8 +502,7 @@ export default function CalculatorPageV3() {
 
         {/* Center/Left: Main Content Wizard Area */}
         <section className="lg:col-span-2 self-stretch flex-1 flex flex-col justify-between relative gap-4 min-h-[calc(100svh-11rem)]">
-          <TopNav />
-
+          <TopNav className="hidden lg:block" />
 
           <div className="flex-1 flex flex-col justify-between gap-4 h-full w-full pt-12">
             <div className="space-y-4 my-auto w-full">
@@ -597,7 +607,6 @@ export default function CalculatorPageV3() {
             </div>
             {/* Navigation Controls Bar (السابق / التالي / احسب التركة) */}
 
-
             <div className="flex items-center justify-center gap-12">
               {/* Previous Button */}
               <button
@@ -668,7 +677,6 @@ export default function CalculatorPageV3() {
               </span>
             </div>
           </div>
-
         </section>
       </main>
 

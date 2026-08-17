@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Button } from '@heroui/react';
-import { Plus, Minus, Users, AlertCircle } from 'lucide-react';
+import { Plus, Minus, Check, Users, AlertCircle } from 'lucide-react';
 import { cn } from '../../../utils';
 import StepHeader from '../StepHeader';
 import { HEIR_CATEGORIES, isHeirBlocked } from '../heirConstants';
@@ -68,15 +68,17 @@ export default function MiniStepCategoryHeirs({
                   <div
                     key={heir.key}
                     onClick={() => {
-                      if (count === 0) {
+                      if (isSingle) {
+                        updateHeir(heir.key, isSelected ? 0 : 1);
+                      } else if (!isSelected) {
                         updateHeir(heir.key, 1);
                       }
                     }}
                     className={cn(
-                      'flex items-center flex-col sm:flex-row gap-4 justify-between p-3.5 sm:p-4 rounded-xl border transition-all duration-200',
+                      'flex items-center flex-col sm:flex-row gap-4 justify-between p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer',
                       isSelected
                         ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                        : 'bg-white/50 border-primary-950/20 text-primary-950 cursor-pointer hover:bg-primary-950/5'
+                        : 'bg-white/50 border-primary-950/20 text-primary-950 hover:bg-primary-950/5'
                     )}
                   >
                     <div className="flex flex-col text-center sm:text-right">
@@ -100,7 +102,28 @@ export default function MiniStepCategoryHeirs({
                       )}
                     </div>
 
-                    {isSelected ? (
+                    {isSingle ? (
+                      /* Select / Single Heir Trigger */
+                      isSelected ? (
+                        <Button
+                          size="sm"
+                          onPress={() => updateHeir(heir.key, 0)}
+                          className="size-6  rounded-full bg-secondary-200 text-primary-950 font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-sm hover:bg-secondary-300 transition-all active:scale-95 border-0"
+                        >
+                          <Check size={14} className="stroke-3" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onPress={() => updateHeir(heir.key, 1)}
+                          className="px-4 rounded-lg border-dashed border-primary-950 text-primary-950 font-bold hover:bg-primary-950/10 border bg-transparent flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        >
+                          <Plus size={14} className="stroke-3" />
+                          <span className="text-xs">إضافة</span>
+                        </Button>
+                      )
+                    ) : isSelected ? (
+                      /* Counter Heir */
                       <div
                         className="flex w-fit items-center gap-1.5 p-1 rounded-lg border-2 border-secondary-200/50 transition-colors"
                         onClick={(e) => e.stopPropagation()}
@@ -118,19 +141,9 @@ export default function MiniStepCategoryHeirs({
                         </span>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (!isSingle) {
-                              updateHeir(heir.key, count + 1);
-                            }
-                          }}
-                          disabled={isSingle}
+                          onClick={() => updateHeir(heir.key, count + 1)}
                           aria-label={`زيادة ${heir.label}`}
-                          className={cn(
-                            'size-7 min-w-0 rounded-md font-bold transition-colors active:scale-95 text-secondary-200 bg-transparent flex items-center justify-center',
-                            isSingle
-                              ? 'opacity-30 cursor-not-allowed'
-                              : 'cursor-pointer hover:bg-primary-800'
-                          )}
+                          className="size-7 min-w-0 rounded-md font-bold cursor-pointer transition-colors active:scale-95 hover:bg-primary-800 text-secondary-200 bg-transparent flex items-center justify-center"
                         >
                           <Plus size={12} className="stroke-4" />
                         </button>
@@ -142,7 +155,7 @@ export default function MiniStepCategoryHeirs({
                         className="px-4 rounded-lg border-dashed border-primary-950 text-primary-950 font-bold hover:bg-primary-950/10 border bg-transparent flex items-center gap-1.5 cursor-pointer shadow-2xs"
                       >
                         <Plus size={14} className="stroke-3" />
-                        <span className='text-xs'>إضافة</span>
+                        <span className="text-xs">إضافة</span>
                       </Button>
                     )}
                   </div>

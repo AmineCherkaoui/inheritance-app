@@ -1,17 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Link, useLocation } from 'react-router';
+import { cn } from '../../utils';
+import { NAV_ITEMS, ROUTES } from '../../constants/links';
 
-export default function TopNav({ activeHref }) {
+export default function TopNav({ activeHref, className, items = NAV_ITEMS }) {
   const location = useLocation();
-
-  const navItems = [
-    { label: 'الرئيسية', href: '/v3' },
-    { label: 'عن الميراث', href: '/v3/#about' },
-    { label: 'أحكام الميراث', href: '/v3/#rules' },
-    { label: 'من نحن؟', href: '/v3/#about-us' }
-  ];
-
   const currentPath = location.pathname + location.hash;
 
   return (
@@ -19,14 +13,14 @@ export default function TopNav({ activeHref }) {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full shrink-0 z-10"
+      className={cn("w-full shrink-0 z-10", className)}
     >
-      <nav className="w-full flex items-center justify-center gap-2 sm:gap-4 bg-primary-950 text-secondary-300 px-4 sm:px-8  rounded-xl border border-amber-900/40 text-xs sm:text-sm font-bold relative">
-        {navItems.map((item, idx) => {
+      <nav className="w-full flex items-center justify-center gap-2 sm:gap-4 bg-primary-950 text-secondary-300 px-4 sm:px-8 rounded-xl text-xs sm:text-sm font-bold relative">
+        {items.map((item, idx) => {
           const isActive = activeHref !== undefined
             ? activeHref === item.href
-            : item.href === '/'
-              ? currentPath === '/' || currentPath === '/v3' || currentPath === ''
+            : item.href === ROUTES.HOME
+              ? currentPath === ROUTES.HOME || currentPath === ''
               : currentPath === item.href;
 
           return (

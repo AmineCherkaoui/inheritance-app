@@ -18,8 +18,8 @@ export default function AppBackground() {
         className="absolute -bottom-16 -left-16 sm:-bottom-24 sm:-left-24 w-120 sm:w-160  aspect-square opacity-5 bg-contain bg-no-repeat bg-bottom-left rotate-180"
         style={{
           backgroundImage: "url('/images/bg-motif.svg')",
-          WebkitMaskImage: 'radial-gradient(circle at 85% 15%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 72%)',
-          maskImage: 'radial-gradient(circle at 85% 15%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 72%)'
+          WebkitMaskImage: 'radial-gradient(circle at 85% 15%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 82%)',
+          maskImage: 'radial-gradient(circle at 85% 15%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 82%)'
         }}
       />
 

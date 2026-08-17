@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { serializeState, generateQRCodeWithLogo, cn } from '../../utils';
+import { ROUTES } from '../../constants/links';
 import { pdf } from '@react-pdf/renderer';
 import PdfReport from '../PdfReport';
 import { exportExcelReport } from '../ExcelReport';
@@ -133,7 +134,7 @@ export default function StepResults({
 
   const getShareLink = () => {
     const code = serializeState(stateSnapshot);
-    return `${window.location.origin}/v3?s=${code}`;
+    return `${window.location.origin}${ROUTES.CALCULATION}?s=${code}`;
   };
 
   const copyShareLink = () => {
