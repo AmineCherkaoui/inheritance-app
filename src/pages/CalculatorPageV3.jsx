@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { ArrowRight, ArrowLeft, Calculator, RotateCcw, AlertCircle } from 'lucide-react';
-import { deserializeState, cn } from '../utils';
+import { serializeState, deserializeState, cn } from '../utils';
 import { InheritanceCalculator } from '../engine';
 
 // Modular Components for V3
@@ -285,6 +285,19 @@ export default function CalculatorPageV3() {
 
   // Run calculation logic
   const handleCalculate = () => {
+    setErrors({});
+    setErrorMessage('');
+
+    if (!deceasedGender) {
+      setErrorMessage('الرجاء تحديد جنس المتوفى أولاً.');
+      return;
+    }
+
+    if (!totalEstate || parseFloat(totalEstate) <= 0) {
+      setErrorMessage('يرجى إدخال قيمة التركة الإجمالية أكبر من الصفر.');
+      return;
+    }
+
     const heirsList = Object.entries(heirs)
       .filter(([_, count]) => count > 0)
       .map(([relationship, count]) => ({
@@ -316,6 +329,23 @@ export default function CalculatorPageV3() {
       setCalculatedResult(output);
       setIsViewingResults(true);
       setErrorMessage('');
+
+      // Update URL query string with the newly serialized state
+      const stateObj = {
+        deceasedName,
+        deceasedGender,
+        totalEstate,
+        debts,
+        heirs,
+        wills,
+        heirsApprovedExcess,
+        mandatoryBequests: hasMandatoryBequest ? mandatoryBequests : []
+      };
+      const code = serializeState(stateObj);
+      if (code && typeof window !== 'undefined' && window.history?.replaceState) {
+        const newUrl = `${window.location.pathname}?s=${code}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+      }
     } catch (err) {
       console.error('Calculation error:', err);
       setErrorMessage('حدث خطأ أثناء حساب المسألة. يرجى التحقق من المدخلات.');
@@ -380,6 +410,7 @@ export default function CalculatorPageV3() {
     setErrorMessage('');
     if (isViewingResults) {
       setIsViewingResults(false);
+      setActiveMiniStepIndex(Math.max(0, activeMiniSteps.length - 1));
       return;
     }
     if (activeMiniStepIndex > 0) {
@@ -402,6 +433,11 @@ export default function CalculatorPageV3() {
     setErrors({});
     setErrorMessage('');
     setActiveMiniStepIndex(0);
+
+    // Clean up query string on reset
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   };
 
   // Navigate to parent step from sidebar
@@ -410,11 +446,7 @@ export default function CalculatorPageV3() {
     setErrorMessage('');
 
     if (parentIndex === 3) {
-      if (calculatedResult) {
-        setIsViewingResults(true);
-      } else {
-        handleCalculate();
-      }
+      handleCalculate();
       return;
     }
 
@@ -429,7 +461,10 @@ export default function CalculatorPageV3() {
     if (parentIndex === 0) return true;
     if (parentIndex === 1) return Boolean(deceasedGender);
     if (parentIndex === 2) return Boolean(deceasedGender) && totalEstate && parseFloat(totalEstate) > 0;
-    if (parentIndex === 3) return calculatedResult !== null;
+    if (parentIndex === 3) {
+      const hasHeirs = Object.values(heirs).some((count) => count > 0) || (hasMandatoryBequest && mandatoryBequests.length > 0);
+      return Boolean(deceasedGender) && Boolean(totalEstate) && parseFloat(totalEstate) > 0 && hasHeirs;
+    }
     return false;
   };
 
@@ -533,7 +568,10 @@ export default function CalculatorPageV3() {
                     <StepResults
                       key="step-results"
                       result={calculatedResult}
-                      onBackToEdit={() => setIsViewingResults(false)}
+                      onBackToEdit={() => {
+                        setIsViewingResults(false);
+                        setActiveMiniStepIndex(Math.max(0, activeMiniSteps.length - 1));
+                      }}
                       onReset={resetAll}
                       stateSnapshot={currentStateSnapshot}
                     />
