@@ -15,7 +15,7 @@ export default function TopNav({ activeHref, className, items = NAV_ITEMS }) {
       transition={{ duration: 0.3 }}
       className={cn("w-full shrink-0 z-10", className)}
     >
-      <nav className="w-full flex items-center justify-center gap-2 sm:gap-4 bg-primary-950 text-secondary-300 px-4 sm:px-8 rounded-xl text-xs sm:text-sm font-bold relative">
+      <nav className="w-full flex items-center justify-center gap-2 sm:gap-4 bg-[#3B0703]  text-secondary-300 px-4 sm:px-8 rounded-xl text-xs sm:text-sm font-bold relative">
         {items.map((item, idx) => {
           const isActive = activeHref !== undefined
             ? activeHref === item.href

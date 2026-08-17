@@ -7,6 +7,7 @@ import { InheritanceCalculator } from '../engine';
 // Modular Components for V3
 import TopNav from '../components/calculatorV3/TopNav';
 import StepSidebar from '../components/calculatorV3/StepSidebar';
+import StepMobile from '../components/calculatorV3/StepMobile';
 import StepDeceasedInfo from '../components/calculatorV3/StepDeceasedInfo';
 import MiniStepEstateDebts from '../components/calculatorV3/estate/MiniStepEstateDebts';
 import MiniStepWills from '../components/calculatorV3/estate/MiniStepWills';
@@ -504,8 +505,17 @@ export default function CalculatorPageV3() {
         <section className="lg:col-span-2 self-stretch flex-1 flex flex-col justify-between relative gap-4 min-h-[calc(100svh-11rem)]">
           <TopNav className="hidden lg:block" />
 
-          <div className="flex-1 flex flex-col justify-between gap-4 h-full w-full pt-12">
-            <div className="space-y-4 my-auto w-full">
+          {/* Mobile Step Bar */}
+          <div className="lg:hidden w-full pt-4">
+            <StepMobile
+              currentStepIndex={currentParentStep}
+              onStepClick={handleSidebarStepClick}
+              canNavigateToStep={canNavigateToStep}
+            />
+          </div>
+
+          <div className="flex-1 flex flex-col justify-between gap-4 h-full w-full ">
+            <div className="flex flex-col gap-4 my-auto w-full pt-6 lg:pt-0">
               {/* Title Header with Calligraphic Framing */}
               <div className="text-center space-y-1 max-w-md flex mx-auto">
                 <img src="/images/title-header.png" alt="Title Header" className="w-full" />

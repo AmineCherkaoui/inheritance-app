@@ -8,7 +8,7 @@ import { ROUTES } from '../constants/links';
 export default function HomePage() {
   return (
     <div
-      className="relative min-h-svh w-full bg-primary-950 text-white flex flex-col justify-between select-none font-sans overflow-hidden bg-cover bg-no-repeat"
+      className="relative min-h-svh w-full text-white flex flex-col justify-between select-none font-sans overflow-hidden bg-cover bg-no-repeat"
       style={{
         backgroundImage: "url('/images/bg-home.png')",
         backgroundPosition: 'left center',
@@ -17,7 +17,7 @@ export default function HomePage() {
       dir="rtl"
     >
       <div className="absolute inset-0 bg-black/20 pointer-events-none z-0" />
-      
+
       {/* Mobile Top Navigation */}
       <div className="md:hidden w-full flex items-center justify-between backdrop-blur-md px-4 py-2.5 relative z-10">
         <MobileNav activeHref={ROUTES.HOME} />
@@ -25,7 +25,7 @@ export default function HomePage() {
 
       {/* Desktop Top Navigation */}
       <header className="relative z-10 w-full pt-4 sm:pt-6 px-4 sm:px-8 max-w-6xl mx-auto flex flex-col items-center">
-        <div className="hidden md:flex w-full justify-center max-w-2xl">
+        <div className="hidden md:flex w-full justify-center max-w-4xl   shadow rounded-xl">
           <TopNav activeHref={ROUTES.HOME} />
         </div>
       </header>
