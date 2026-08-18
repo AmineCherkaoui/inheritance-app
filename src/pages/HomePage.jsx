@@ -31,7 +31,7 @@ export default function HomePage() {
       </header>
 
       {/* Middle Hero Section: Logo + CTA Button */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 my-auto py-8">
+      <main className="container mx-auto relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 my-auto py-8">
         {/* Center Logo */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 15 }}
@@ -44,6 +44,32 @@ export default function HomePage() {
             alt="حساب الفرائض والمواريث"
             className="w-48 sm:w-60 md:w-72 drop-shadow-2xl"
           />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+          className="relative max-w-5xl mx-auto w-full flex items-center justify-center px-3 sm:px-8 py-3 sm:py-6 overflow-hidden sm:overflow-visible"
+        >
+          {/* Right motif (RTL Start) */}
+          <img
+            src="/images/home-motif.svg"
+            alt=""
+            className="absolute hidden lg:block -right-32 inset-y-0 h-full w-[56%] object-fill scale-x-[-1] object-left opacity-25 sm:opacity-30 pointer-events-none select-none"
+          />
+
+          {/* Left motif (RTL End) */}
+          <img
+            src="/images/home-motif.svg"
+            alt=""
+            className="absolute hidden lg:block -left-32 inset-y-0 h-full w-[56%] object-fill object-left opacity-25 sm:opacity-30 pointer-events-none select-none"
+          />
+
+          {/* Text Content */}
+          <p className="relative z-10 text-secondary-100 font-bold text-xs sm:text-sm md:text-[15px] leading-relaxed sm:leading-loose text-center  max-w-4xl drop-shadow-md">
+            الميراث في المغرب هو منظومة قانونية مستمدة من أحكام الشريعة الإسلامية، وتُنظَّم بموجب مدونة الأسرة، في إطار المرجعية الفقهية المالكية والاجتهاد، بهدف تنظيم انتقال أموال المتوفى وحقوقه إلى مستحقيها، وفق قواعد شرعية وقانونية محددة.
+          </p>
         </motion.div>
 
         {/* Main CTA Button: حساب الميراث */}
