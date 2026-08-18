@@ -23,7 +23,7 @@ export default function MiniStepEstateDebts({
       <StepHeader
         title="التركة والديون والالتزامات"
         icon={Coins}
-        subtitle="تُصفى الديون والالتزامات المالية من التركة قبل توزيع الميراث الشرعي"
+        subtitle="تُصفى الديون والالتزامات المالية من التركة قبل توزيع الميراث"
       />
 
       {/* Inputs Section */}

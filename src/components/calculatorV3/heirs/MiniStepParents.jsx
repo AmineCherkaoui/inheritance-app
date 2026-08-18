@@ -23,7 +23,7 @@ export default function MiniStepParents({
       <StepHeader
         title="الأبوان (الأب والأم)"
         icon={Users}
-        subtitle="حدد حالة والدي المتوفى على قيد الحياة وقت الوفاة"
+        subtitle="حدد حالة والدي المتوفى على قيد الحياة"
       />
 
       {/* Parents Selection */}
