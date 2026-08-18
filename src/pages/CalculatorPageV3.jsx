@@ -687,7 +687,7 @@ export default function CalculatorPageV3() {
                   onClick={handleNext}
                   disabled={isNextDisabled}
                   className={cn(
-                    'px-8 py-1.5 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
+                    'px-6 py-3 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
                     isNextDisabled
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:bg-primary-900 cursor-pointer'
@@ -703,7 +703,7 @@ export default function CalculatorPageV3() {
                   onClick={handleNext}
                   disabled={isNextDisabled}
                   className={cn(
-                    'px-8 py-1.5 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
+                    'px-6 py-3 rounded-md bg-primary-950 font-black text-xs sm:text-sm transition-all flex items-center gap-2 text-white',
                     isNextDisabled
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:bg-primary-900 cursor-pointer'
