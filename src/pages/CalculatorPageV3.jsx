@@ -662,7 +662,7 @@ export default function CalculatorPageV3() {
                 onClick={handlePrev}
                 disabled={activeMiniStepIndex === 0 && !isViewingResults}
                 className={cn(
-                  'px-6 py-1.5 rounded-md ring-1 ring-primary-950 bg-transparent text-primary-950 font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5',
+                  'px-6 py-3 rounded-md ring-1 ring-primary-950 bg-transparent text-primary-950 font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5',
                   activeMiniStepIndex === 0 && !isViewingResults
                     ? 'opacity-40 cursor-not-allowed'
                     : 'hover:bg-default-100 cursor-pointer'
@@ -676,7 +676,7 @@ export default function CalculatorPageV3() {
                 <button
                   type="button"
                   onClick={resetAll}
-                  className="px-6 py-1.5 rounded-md bg-primary-950 hover:bg-primary-900 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-6 py-3 rounded-md bg-primary-950 hover:bg-primary-900 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw size={16} />
                   <span>مسألة جديدة</span>
