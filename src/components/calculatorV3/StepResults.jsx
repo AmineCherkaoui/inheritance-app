@@ -314,7 +314,7 @@ export default function StepResults({
           <div className="bg-white/50 border border-primary-950/20 rounded-xl p-4 flex flex-col items-center justify-center">
             {/* Donut Chart */}
             <div className="relative h-44 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" className="relative z-10">
                 <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                   <Pie
                     data={chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData}
@@ -337,20 +337,22 @@ export default function StepResults({
                     ))}
                   </Pie>
                   <Tooltip
+                    wrapperStyle={{ zIndex: 50, outline: 'none' }}
                     formatter={(val) => `${Number(val).toLocaleString()} د.م.`}
                     contentStyle={{
                       backgroundColor: '#ffffff',
                       borderRadius: '10px',
                       fontSize: '11px',
                       textAlign: 'right',
-                      border: '1px solid rgba(0,0,0,0.1)'
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
 
-              {/* Center Estate Info */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              {/* Center Estate Info (Layered below the chart & tooltip, visible through the donut hole) */}
+              <div className="absolute inset-0 z-0 flex flex-col items-center justify-center pointer-events-none text-center">
                 <span className="text-[10px] font-bold text-muted-foreground leading-tight">
                   {chartMode === 'estate' && hasWillsOrDebts ? 'إجمالي التركة' : 'صافي الورثة'}
                 </span>
