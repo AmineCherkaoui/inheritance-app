@@ -4,6 +4,7 @@ import { WifiOff, Download, Check, X } from 'lucide-react';
 
 export default function PwaManager() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isDismissed, setIsDismissed] = useState(() => {
     try {
@@ -15,7 +16,10 @@ export default function PwaManager() {
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
+    const handleOnline = () => {
+      setIsOffline(false);
+      setIsOfflineDismissed(false);
+    };
     const handleOffline = () => setIsOffline(true);
 
     window.addEventListener('online', handleOnline);
@@ -64,21 +68,32 @@ export default function PwaManager() {
   return (
     <aside aria-label="حالة التطبيق والتثبيت" className="fixed bottom-4 left-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm">
       <AnimatePresence>
-        {isOffline && (
+        {isOffline && !isOfflineDismissed && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="pointer-events-auto bg-primary-950/95 text-secondary-100 border border-secondary-400/30 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-3 text-xs sm:text-sm font-medium"
+            className="pointer-events-auto bg-primary-950/95 text-secondary-100 border border-secondary-400/30 backdrop-blur-md p-3 rounded-xl shadow-xl flex items-center justify-between gap-3 text-xs sm:text-sm font-medium"
             dir="rtl"
           >
-            <div className="p-1.5 rounded-lg bg-secondary-400/20 text-secondary-200">
-              <WifiOff className="size-4" />
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-secondary-400/20 text-secondary-200 shrink-0">
+                <WifiOff className="size-4" />
+              </div>
+              <div>
+                <p className="font-bold text-secondary-200">أنت تعمل دون اتصال</p>
+                <p className="text-[11px] text-secondary-300/80">جميع الحسابات تعمل بكامل ميزاتها بدون إنترنت</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-secondary-200">أنت تعمل دون اتصال</p>
-              <p className="text-[11px] text-secondary-300/80">جميع الحسابات تعمل بكامل ميزاتها بدون إنترنت</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsOfflineDismissed(true)}
+              className="p-1.5 rounded-lg text-secondary-300/70 hover:text-secondary-100 hover:bg-secondary-400/10 transition-colors cursor-pointer shrink-0"
+              title="إغلاق"
+              aria-label="إغلاق إشعار العمل دون اتصال"
+            >
+              <X className="size-4" />
+            </button>
           </motion.div>
         )}
 
