@@ -218,14 +218,12 @@ export default function StepResults({
       {/* Estate Liquidation Overview (تصفية التركة والخصوم) */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-sm font-bold text-muted-foreground block text-right">
-            تصفية التركة والخصوم الشرعية
-          </span>
-          <div className="flex items-center gap-1.5 text-xs">
+
+          <div className="flex items-center gap-1.5 text-lg">
             <span className="font-bold text-muted-foreground">
               {result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى'}:
             </span>
-            <span className="font-black text-primary-950">
+            <span className="font-black text-primary-800">
               {result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}
             </span>
           </div>
@@ -237,7 +235,7 @@ export default function StepResults({
         )}>
           {/* Gross Estate */}
           <div className="bg-white/50 border border-primary-950/20 rounded-xl p-3.5 flex flex-col text-right">
-            <span className="text-[11px] font-bold text-muted-foreground">إجمالي التركة (الخام)</span>
+            <span className="text-[11px] font-bold text-muted-foreground">إجمالي التركة</span>
             <span className="text-xs sm:text-sm font-black font-mono text-primary-950 mt-1">
               {formatCurrency(result.total_estate)}
             </span>
