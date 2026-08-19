@@ -1,20 +1,22 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Button } from '@heroui/react';
-import { Plus, Minus, Check, Users, AlertCircle } from 'lucide-react';
-import { cn } from '../../../utils';
-import StepHeader from '../StepHeader';
-import { HEIR_CATEGORIES, isHeirBlocked } from '../heirConstants';
+import React from "react";
+import { motion } from "motion/react";
+import { Button } from "@heroui/react";
+import { Plus, Minus, Check, Users, AlertCircle } from "lucide-react";
+import { cn } from "../../../utils";
+import StepHeader from "../StepHeader";
+import { HEIR_CATEGORIES, isHeirBlocked } from "../heirConstants";
 
 export default function MiniStepCategoryHeirs({
   categoryKey,
   heirs = {},
-  updateHeir
+  updateHeir,
 }) {
   const category = HEIR_CATEGORIES[categoryKey];
   if (!category) return null;
 
-  const availableHeirs = category.list.filter((h) => !isHeirBlocked(h.key, heirs));
+  const availableHeirs = category.list.filter(
+    (h) => !isHeirBlocked(h.key, heirs),
+  );
   const blockedHeirsCount = category.list.length - availableHeirs.length;
 
   return (
@@ -29,7 +31,10 @@ export default function MiniStepCategoryHeirs({
       <StepHeader
         title={category.title}
         icon={Users}
-        subtitle={category.subtitle || 'أدخل عدد الأقارب المستحقين إن وجدوا، أو اضغط "التالي" للمتابعة إن لم يوجدوا'}
+        subtitle={
+          category.subtitle ||
+          'أدخل عدد الأقارب المستحقين إن وجدوا، أو اضغط "التالي" للمتابعة إن لم يوجدوا'
+        }
       />
 
       {/* Main Container */}
@@ -37,13 +42,18 @@ export default function MiniStepCategoryHeirs({
         {availableHeirs.length === 0 ? (
           /* All heirs in category are blocked */
           <div className="p-4 bg-secondary-100/80 border border-secondary-200 text-primary-950 rounded-xl text-xs sm:text-sm flex items-start gap-3 text-right">
-            <AlertCircle size={18} className="text-secondary-500 shrink-0 mt-0.5" />
+            <AlertCircle
+              size={18}
+              className="text-secondary-500 shrink-0 mt-0.5"
+            />
             <div className="flex flex-col gap-1">
               <span className="font-extrabold text-primary-950">
                 جميع الورثة في فئة «{category.title}» محجوبون شرعاً
               </span>
-              <span className="text-muted-foreground text-xs leading-relaxed">
-                نظراً لوجود ورثة أقرب في الدرجة (مثل الابن أو الأب)، تسقط حقوق هذه الفئة بحكم قواعد الحجب الشرعية. يمكنك المتابعة مباشرة عبر زر «التالي».
+              <span className=" text-xs leading-relaxed">
+                نظراً لوجود ورثة أقرب في الدرجة (مثل الابن أو الأب)، تسقط حقوق
+                هذه الفئة بحكم قواعد الحجب الشرعية. يمكنك المتابعة مباشرة عبر زر
+                «التالي».
               </span>
             </div>
           </div>
@@ -62,7 +72,7 @@ export default function MiniStepCategoryHeirs({
               {availableHeirs.map((heir) => {
                 const count = heirs[heir.key] || 0;
                 const isSelected = count > 0;
-                const isSingle = heir.type === 'select';
+                const isSingle = heir.type === "select";
 
                 return (
                   <div
@@ -75,17 +85,19 @@ export default function MiniStepCategoryHeirs({
                       }
                     }}
                     className={cn(
-                      'flex items-center flex-col sm:flex-row gap-4 justify-between p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer',
+                      "flex items-center flex-col sm:flex-row gap-4 justify-between p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer",
                       isSelected
-                        ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                        : 'bg-white/50 border-primary-950/20 text-primary-950 hover:bg-primary-950/5'
+                        ? "bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md"
+                        : "bg-white/50 border-primary-950/20 text-primary-950 hover:bg-primary-950/5",
                     )}
                   >
                     <div className="flex flex-col text-center sm:text-right">
                       <span
                         className={cn(
-                          'text-xs sm:text-sm font-extrabold',
-                          isSelected ? 'text-secondary-200' : 'text-primary-950'
+                          "text-xs sm:text-sm font-extrabold",
+                          isSelected
+                            ? "text-secondary-200"
+                            : "text-primary-950",
                         )}
                       >
                         {heir.label}
@@ -93,8 +105,8 @@ export default function MiniStepCategoryHeirs({
                       {heir.note && (
                         <span
                           className={cn(
-                            'text-[11px] sm:text-xs mt-0.5',
-                            isSelected ? 'text-secondary-100/80' : 'text-muted-foreground'
+                            "text-[11px] sm:text-xs mt-0.5",
+                            isSelected ? "text-secondary-100/80" : "",
                           )}
                         >
                           {heir.note}
@@ -130,7 +142,9 @@ export default function MiniStepCategoryHeirs({
                       >
                         <button
                           type="button"
-                          onClick={() => updateHeir(heir.key, Math.max(0, count - 1))}
+                          onClick={() =>
+                            updateHeir(heir.key, Math.max(0, count - 1))
+                          }
                           aria-label={`إنقاص ${heir.label}`}
                           className="size-7 min-w-0 rounded-md font-bold cursor-pointer transition-colors active:scale-95 hover:bg-primary-800 text-secondary-200 bg-transparent flex items-center justify-center"
                         >

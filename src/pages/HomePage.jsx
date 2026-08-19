@@ -1,9 +1,8 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Link } from 'react-router';
-import TopNav from '../components/calculatorV3/TopNav';
-import MobileNav from '../components/calculatorV3/MobileNav';
-import { ROUTES } from '../constants/links';
+import { motion } from "motion/react";
+import { Link } from "react-router";
+import MobileNav from "../components/calculatorV3/MobileNav";
+import TopNav from "../components/calculatorV3/TopNav";
+import { ROUTES } from "../constants/links";
 
 export default function HomePage() {
   return (
@@ -11,8 +10,8 @@ export default function HomePage() {
       className="relative min-h-svh w-full text-white flex flex-col justify-between select-none font-sans overflow-hidden bg-cover bg-no-repeat"
       style={{
         backgroundImage: "url('/images/bg-home.png')",
-        backgroundPosition: 'left center',
-        backgroundSize: 'cover'
+        backgroundPosition: "left center",
+        backgroundSize: "cover",
       }}
       dir="rtl"
     >
@@ -36,7 +35,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="flex flex-col items-center space-y-4"
         >
           <img
@@ -49,7 +48,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+          transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
           className="relative max-w-5xl mx-auto w-full flex items-center justify-center px-3 sm:px-8 py-3 sm:py-6 overflow-hidden sm:overflow-visible"
         >
           {/* Right motif (RTL Start) */}
@@ -67,8 +66,9 @@ export default function HomePage() {
           />
 
           {/* Text Content */}
-          <p className="relative z-10 text-secondary-100 font-bold text-xs sm:text-sm md:text-[15px] leading-relaxed sm:leading-loose text-center  max-w-4xl drop-shadow-md">
-            الميراث في المغرب هو منظومة قانونية مستمدة من أحكام الشريعة الإسلامية، وتُنظَّم بموجب مدونة الأسرة، في إطار المرجعية الفقهية المالكية والاجتهاد، بهدف تنظيم انتقال أموال المتوفى وحقوقه إلى مستحقيها، وفق قواعد شرعية وقانونية محددة.
+          <p className="relative z-10 text-secondary-100  text-sm md:text-[15px] leading-relaxed sm:leading-loose text-center  max-w-4xl drop-shadow-md">
+            يعتمد هذا التطبيق في حساب أحكام الميراث على مدونة الأسرة المغربية
+            الجديدة، وذلك في إطار المرجعية الإسلامية والمذهب المالكي.
           </p>
         </motion.div>
 
@@ -76,12 +76,10 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25, ease: 'easeOut' }}
+          transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
           className="mt-8 sm:mt-10"
         >
-          <motion.div
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileTap={{ scale: 0.95 }}>
             <Link
               to={ROUTES.CALCULATION}
               className="px-8 py-2.5 rounded-2xl bg-secondary-200 text-primary-950 font-black text-sm sm:text-base hover:bg-secondary-100 transition-all text-center tracking-wide block"

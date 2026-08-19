@@ -1,15 +1,15 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Plus, Minus, Heart } from 'lucide-react';
-import { cn } from '../../../utils';
-import StepHeader from '../StepHeader';
+import React from "react";
+import { motion } from "motion/react";
+import { Plus, Minus, Heart } from "lucide-react";
+import { cn } from "../../../utils";
+import StepHeader from "../StepHeader";
 
 export default function MiniStepSpouse({
   heirs = {},
   updateHeir,
-  deceasedGender = 'male'
+  deceasedGender = "male",
 }) {
-  const isFemaleDeceased = deceasedGender === 'female';
+  const isFemaleDeceased = deceasedGender === "female";
 
   return (
     <motion.div
@@ -21,19 +21,19 @@ export default function MiniStepSpouse({
     >
       {/* Header Section */}
       <StepHeader
-        title={isFemaleDeceased ? 'بيانات الزوج' : 'بيانات الزوجة أو الزوجات'}
+        title={isFemaleDeceased ? "بيانات الزوج" : "بيانات الزوجة أو الزوجات"}
         icon={Heart}
         subtitle={
           isFemaleDeceased
-            ? 'حدد ما إذا كان الزوج على قيد الحياة'
-            : 'حدد ما إذا كانت توجد زوجة أو أكثر على قيد الحياة'
+            ? "حدد ما إذا كان الزوج على قيد الحياة"
+            : "حدد ما إذا كانت توجد زوجة أو أكثر على قيد الحياة"
         }
       />
 
       {/* Selection Section */}
       <div className="space-y-4">
-        <span className="text-sm font-bold text-muted-foreground block text-right">
-          {isFemaleDeceased ? 'حالة الزوج' : 'حالة الزوجة (أو الزوجات)'}
+        <span className="text-sm font-bold  block text-right">
+          {isFemaleDeceased ? "حالة الزوج" : "حالة الزوجة (أو الزوجات)"}
         </span>
 
         {isFemaleDeceased ? (
@@ -43,32 +43,43 @@ export default function MiniStepSpouse({
             <motion.div
               whileHover={{ scale: 1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => updateHeir('HUSBAND', 1)}
+              onClick={() => updateHeir("HUSBAND", 1)}
               className={cn(
-                'flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200',
-                heirs['HUSBAND'] === 1
-                  ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                  : 'bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10'
+                "flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200",
+                heirs["HUSBAND"] === 1
+                  ? "bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md"
+                  : "bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10",
               )}
             >
               <div className="p-1 rounded-lg shrink-0 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" className="size-8" viewBox="0 0 512 512">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-8"
+                  viewBox="0 0 512 512"
+                >
                   <path d="M0 0h512v512H0z" fill="none" />
                   <circle cx="256" cy="56" r="56" fill="currentColor" />
-                  <path fill="currentColor" d="M304 128h-96a64.19 64.19 0 0 0-64 64v107.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 184 300v-99.73a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8V489a23 23 0 0 0 23 23a23 23 0 0 0 23-23V346.34a10.24 10.24 0 0 1 9.33-10.34A10 10 0 0 1 266 346v143a23 23 0 0 0 23 23a23 23 0 0 0 23-23V200.27a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8v99.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 368 300V192a64.19 64.19 0 0 0-64-64" />
+                  <path
+                    fill="currentColor"
+                    d="M304 128h-96a64.19 64.19 0 0 0-64 64v107.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 184 300v-99.73a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8V489a23 23 0 0 0 23 23a23 23 0 0 0 23-23V346.34a10.24 10.24 0 0 1 9.33-10.34A10 10 0 0 1 266 346v143a23 23 0 0 0 23 23a23 23 0 0 0 23-23V200.27a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8v99.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 368 300V192a64.19 64.19 0 0 0-64-64"
+                  />
                 </svg>
                 <Plus className="size-3 stroke-3 absolute top-0 right-0" />
               </div>
 
               <div
                 className={cn(
-                  'h-full w-px mx-4 transition-colors hidden sm:block',
-                  heirs['HUSBAND'] === 1 ? 'bg-secondary-200' : 'bg-primary-950'
+                  "h-full w-px mx-4 transition-colors hidden sm:block",
+                  heirs["HUSBAND"] === 1
+                    ? "bg-secondary-200"
+                    : "bg-primary-950",
                 )}
               />
 
               <div className="flex flex-col text-center flex-1">
-                <span className="text-xs sm:text-sm font-extrabold">يوجد زوج</span>
+                <span className="text-xs sm:text-sm font-extrabold">
+                  يوجد زوج
+                </span>
                 <span className="text-xs">على قيد الحياة</span>
               </div>
             </motion.div>
@@ -77,32 +88,43 @@ export default function MiniStepSpouse({
             <motion.div
               whileHover={{ scale: 1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => updateHeir('HUSBAND', -1)}
+              onClick={() => updateHeir("HUSBAND", -1)}
               className={cn(
-                'flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200',
-                heirs['HUSBAND'] === -1
-                  ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                  : 'bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10'
+                "flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200",
+                heirs["HUSBAND"] === -1
+                  ? "bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md"
+                  : "bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10",
               )}
             >
               <div className="p-1 rounded-lg shrink-0 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" className="size-8" viewBox="0 0 512 512">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-8"
+                  viewBox="0 0 512 512"
+                >
                   <path d="M0 0h512v512H0z" fill="none" />
                   <circle cx="256" cy="56" r="56" fill="currentColor" />
-                  <path fill="currentColor" d="M304 128h-96a64.19 64.19 0 0 0-64 64v107.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 184 300v-99.73a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8V489a23 23 0 0 0 23 23a23 23 0 0 0 23-23V346.34a10.24 10.24 0 0 1 9.33-10.34A10 10 0 0 1 266 346v143a23 23 0 0 0 23 23a23 23 0 0 0 23-23V200.27a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8v99.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 368 300V192a64.19 64.19 0 0 0-64-64" />
+                  <path
+                    fill="currentColor"
+                    d="M304 128h-96a64.19 64.19 0 0 0-64 64v107.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 184 300v-99.73a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8V489a23 23 0 0 0 23 23a23 23 0 0 0 23-23V346.34a10.24 10.24 0 0 1 9.33-10.34A10 10 0 0 1 266 346v143a23 23 0 0 0 23 23a23 23 0 0 0 23-23V200.27a8.18 8.18 0 0 1 7.47-8.25a8 8 0 0 1 8.53 8v99.52c0 10.85 8.43 20.08 19.27 20.47A20 20 0 0 0 368 300V192a64.19 64.19 0 0 0-64-64"
+                  />
                 </svg>
                 <Minus className="size-3 stroke-3 absolute top-0 right-0" />
               </div>
 
               <div
                 className={cn(
-                  'h-full w-px mx-4 transition-colors hidden sm:block',
-                  heirs['HUSBAND'] === -1 ? 'bg-secondary-200' : 'bg-primary-950'
+                  "h-full w-px mx-4 transition-colors hidden sm:block",
+                  heirs["HUSBAND"] === -1
+                    ? "bg-secondary-200"
+                    : "bg-primary-950",
                 )}
               />
 
               <div className="flex flex-col text-center flex-1">
-                <span className="text-xs sm:text-sm font-extrabold">لا يوجد زوج</span>
+                <span className="text-xs sm:text-sm font-extrabold">
+                  لا يوجد زوج
+                </span>
                 <span className="text-xs">متوفى أو غير متزوجة</span>
               </div>
             </motion.div>
@@ -113,60 +135,73 @@ export default function MiniStepSpouse({
             {/* Wife Exists */}
             <motion.div
               whileHover={{ scale: 1 }}
-              whileTap={heirs['WIFE'] > 0 ? {} : { scale: 0.95 }}
+              whileTap={heirs["WIFE"] > 0 ? {} : { scale: 0.95 }}
               onClick={() => {
-                if (!(heirs['WIFE'] > 0)) {
-                  updateHeir('WIFE', 1);
+                if (!(heirs["WIFE"] > 0)) {
+                  updateHeir("WIFE", 1);
                 }
               }}
               className={cn(
-                'flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-4 py-3 rounded-xl border cursor-pointer transition-all duration-200',
-                heirs['WIFE'] > 0
-                  ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                  : 'bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10'
+                "flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-4 py-3 rounded-xl border cursor-pointer transition-all duration-200",
+                heirs["WIFE"] > 0
+                  ? "bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md"
+                  : "bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10",
               )}
             >
               <div className="p-1 rounded-lg shrink-0 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" className="size-8" viewBox="0 0 512 512">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-8"
+                  viewBox="0 0 512 512"
+                >
                   <path d="M0 0h512v512H0z" fill="none" />
                   <circle cx="255.75" cy="56" r="56" fill="currentColor" />
-                  <path fill="currentColor" d="m394.63 277.9l-10.33-34.41v-.11l-22.46-74.86h-.05l-2.51-8.45a44.87 44.87 0 0 0-43-32.08h-120a44.84 44.84 0 0 0-43 32.08l-2.51 8.45h-.06l-22.46 74.86v.11l-10.37 34.41c-3.12 10.39 2.3 21.66 12.57 25.14a20 20 0 0 0 25.6-13.18l25.58-85.25l2.17-7.23a8 8 0 0 1 15.53 2.62a7.8 7.8 0 0 1-.17 1.61L155.43 347.4a16 16 0 0 0 15.32 20.6h29v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h16v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h30a16 16 0 0 0 15.33-20.6l-43.74-145.81a7.5 7.5 0 0 1-.16-1.59a8 8 0 0 1 15.54-2.63l2.17 7.23l25.57 85.25A20 20 0 0 0 382.05 303c10.27-3.44 15.69-14.71 12.58-25.1" />
+                  <path
+                    fill="currentColor"
+                    d="m394.63 277.9l-10.33-34.41v-.11l-22.46-74.86h-.05l-2.51-8.45a44.87 44.87 0 0 0-43-32.08h-120a44.84 44.84 0 0 0-43 32.08l-2.51 8.45h-.06l-22.46 74.86v.11l-10.37 34.41c-3.12 10.39 2.3 21.66 12.57 25.14a20 20 0 0 0 25.6-13.18l25.58-85.25l2.17-7.23a8 8 0 0 1 15.53 2.62a7.8 7.8 0 0 1-.17 1.61L155.43 347.4a16 16 0 0 0 15.32 20.6h29v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h16v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h30a16 16 0 0 0 15.33-20.6l-43.74-145.81a7.5 7.5 0 0 1-.16-1.59a8 8 0 0 1 15.54-2.63l2.17 7.23l25.57 85.25A20 20 0 0 0 382.05 303c10.27-3.44 15.69-14.71 12.58-25.1"
+                  />
                 </svg>
                 <Plus className="size-3 stroke-3 absolute top-0 right-0" />
               </div>
 
               <div
                 className={cn(
-                  'h-full w-px mx-3 transition-colors hidden sm:block',
-                  heirs['WIFE'] > 0 ? 'bg-secondary-200' : 'bg-primary-950'
+                  "h-full w-px mx-3 transition-colors hidden sm:block",
+                  heirs["WIFE"] > 0 ? "bg-secondary-200" : "bg-primary-950",
                 )}
               />
 
               <div className="flex flex-col text-center flex-1">
-                <span className="text-xs sm:text-sm font-extrabold">توجد زوجة</span>
+                <span className="text-xs sm:text-sm font-extrabold">
+                  توجد زوجة
+                </span>
                 <span className="text-xs">على قيد الحياة</span>
               </div>
 
               {/* Counter at the End */}
-              {heirs['WIFE'] > 0 && (
+              {heirs["WIFE"] > 0 && (
                 <div
                   className="shrink-0 flex items-center gap-1 p-1 rounded-lg border-2 border-secondary-200/50"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     type="button"
-                    onClick={() => updateHeir('WIFE', Math.max(1, (heirs['WIFE'] || 1) - 1))}
+                    onClick={() =>
+                      updateHeir("WIFE", Math.max(1, (heirs["WIFE"] || 1) - 1))
+                    }
                     aria-label="إنقاص عدد الزوجات"
                     className="size-6 rounded hover:bg-primary-800 text-secondary-200 font-bold flex items-center justify-center cursor-pointer transition-colors active:scale-95"
                   >
                     <Minus size={12} className="stroke-4" />
                   </button>
                   <span className="w-5 text-center text-xs font-black text-secondary-100 font-mono">
-                    {heirs['WIFE']}
+                    {heirs["WIFE"]}
                   </span>
                   <button
                     type="button"
-                    onClick={() => updateHeir('WIFE', Math.min(4, (heirs['WIFE'] || 1) + 1))}
+                    onClick={() =>
+                      updateHeir("WIFE", Math.min(4, (heirs["WIFE"] || 1) + 1))
+                    }
                     aria-label="زيادة عدد الزوجات"
                     className="size-6 rounded hover:bg-primary-800 text-secondary-200 font-bold flex items-center justify-center cursor-pointer transition-colors active:scale-95"
                   >
@@ -180,32 +215,41 @@ export default function MiniStepSpouse({
             <motion.div
               whileHover={{ scale: 1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => updateHeir('WIFE', -1)}
+              onClick={() => updateHeir("WIFE", -1)}
               className={cn(
-                'flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200',
-                heirs['WIFE'] === -1
-                  ? 'bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md'
-                  : 'bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10'
+                "flex items-center flex-col gap-2 sm:flex-row px-2 sm:px-6 py-3 rounded-xl border cursor-pointer transition-all duration-200",
+                heirs["WIFE"] === -1
+                  ? "bg-primary-950 border-secondary-200 text-secondary-200 ring-2 ring-secondary-200 shadow-md"
+                  : "bg-white/50 text-primary-950 border-primary-950/50 hover:bg-primary-950/10",
               )}
             >
               <div className="p-1 rounded-lg shrink-0 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" className="size-8" viewBox="0 0 512 512">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-8"
+                  viewBox="0 0 512 512"
+                >
                   <path d="M0 0h512v512H0z" fill="none" />
                   <circle cx="255.75" cy="56" r="56" fill="currentColor" />
-                  <path fill="currentColor" d="m394.63 277.9l-10.33-34.41v-.11l-22.46-74.86h-.05l-2.51-8.45a44.87 44.87 0 0 0-43-32.08h-120a44.84 44.84 0 0 0-43 32.08l-2.51 8.45h-.06l-22.46 74.86v.11l-10.37 34.41c-3.12 10.39 2.3 21.66 12.57 25.14a20 20 0 0 0 25.6-13.18l25.58-85.25l2.17-7.23a8 8 0 0 1 15.53 2.62a7.8 7.8 0 0 1-.17 1.61L155.43 347.4a16 16 0 0 0 15.32 20.6h29v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h16v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h30a16 16 0 0 0 15.33-20.6l-43.74-145.81a7.5 7.5 0 0 1-.16-1.59a8 8 0 0 1 15.54-2.63l2.17 7.23l25.57 85.25A20 20 0 0 0 382.05 303c10.27-3.44 15.69-14.71 12.58-25.1" />
+                  <path
+                    fill="currentColor"
+                    d="m394.63 277.9l-10.33-34.41v-.11l-22.46-74.86h-.05l-2.51-8.45a44.87 44.87 0 0 0-43-32.08h-120a44.84 44.84 0 0 0-43 32.08l-2.51 8.45h-.06l-22.46 74.86v.11l-10.37 34.41c-3.12 10.39 2.3 21.66 12.57 25.14a20 20 0 0 0 25.6-13.18l25.58-85.25l2.17-7.23a8 8 0 0 1 15.53 2.62a7.8 7.8 0 0 1-.17 1.61L155.43 347.4a16 16 0 0 0 15.32 20.6h29v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h16v114.69c0 16.46 10.53 29.31 24 29.31s24-12.85 24-29.31V368h30a16 16 0 0 0 15.33-20.6l-43.74-145.81a7.5 7.5 0 0 1-.16-1.59a8 8 0 0 1 15.54-2.63l2.17 7.23l25.57 85.25A20 20 0 0 0 382.05 303c10.27-3.44 15.69-14.71 12.58-25.1"
+                  />
                 </svg>
                 <Minus className="size-3 stroke-3 absolute top-0 right-0" />
               </div>
 
               <div
                 className={cn(
-                  'h-full w-px mx-4 transition-colors hidden sm:block',
-                  heirs['WIFE'] === -1 ? 'bg-secondary-200' : 'bg-primary-950'
+                  "h-full w-px mx-4 transition-colors hidden sm:block",
+                  heirs["WIFE"] === -1 ? "bg-secondary-200" : "bg-primary-950",
                 )}
               />
 
               <div className="flex flex-col text-center flex-1">
-                <span className="text-xs sm:text-sm font-extrabold">لا توجد زوجة</span>
+                <span className="text-xs sm:text-sm font-extrabold">
+                  لا توجد زوجة
+                </span>
                 <span className="text-xs">متوفاة أو غير متزوج</span>
               </div>
             </motion.div>

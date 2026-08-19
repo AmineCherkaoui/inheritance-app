@@ -1,8 +1,8 @@
-import React, { useEffect, createContext, useContext } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
-import { cn } from '../../utils';
+import { X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { createContext, useContext, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { cn } from "../../utils";
 
 const SheetContext = createContext(null);
 
@@ -28,106 +28,106 @@ export function useSheet() {
 export default function Sheet({
   isOpen = false,
   onClose,
-  side = 'right',
-  size = 'md',
+  side = "right",
+  size = "md",
   closeOnBackdropClick = true,
   closeOnEsc = true,
   showCloseButton = false,
   backdropClassName,
   className,
-  dir = 'rtl',
-  children
+  dir = "rtl",
+  children,
 }) {
   // ESC key and body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
-      if (closeOnEsc && e.key === 'Escape') {
+      if (closeOnEsc && e.key === "Escape") {
         onClose?.();
       }
     };
 
     const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.body.style.overflow = originalOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose, closeOnEsc]);
 
   const getPlacementClasses = () => {
     switch (side) {
-      case 'left':
+      case "left":
         return {
-          panel: 'fixed top-0 bottom-0 left-0 h-full',
+          panel: "fixed top-0 bottom-0 left-0 h-full",
           variants: {
-            initial: { x: '-100%' },
+            initial: { x: "-100%" },
             animate: { x: 0 },
-            exit: { x: '-100%' }
-          }
+            exit: { x: "-100%" },
+          },
         };
-      case 'top':
+      case "top":
         return {
-          panel: 'fixed top-0 left-0 right-0 w-full',
+          panel: "fixed top-0 left-0 right-0 w-full",
           variants: {
-            initial: { y: '-100%' },
+            initial: { y: "-100%" },
             animate: { y: 0 },
-            exit: { y: '-100%' }
-          }
+            exit: { y: "-100%" },
+          },
         };
-      case 'bottom':
+      case "bottom":
         return {
-          panel: 'fixed bottom-0 left-0 right-0 w-full',
+          panel: "fixed bottom-0 left-0 right-0 w-full",
           variants: {
-            initial: { y: '100%' },
+            initial: { y: "100%" },
             animate: { y: 0 },
-            exit: { y: '100%' }
-          }
+            exit: { y: "100%" },
+          },
         };
-      case 'right':
+      case "right":
       default:
         return {
-          panel: 'fixed top-0 bottom-0 right-0 h-full',
+          panel: "fixed top-0 bottom-0 right-0 h-full",
           variants: {
-            initial: { x: '100%' },
+            initial: { x: "100%" },
             animate: { x: 0 },
-            exit: { x: '100%' }
-          }
+            exit: { x: "100%" },
+          },
         };
     }
   };
 
   const getSizeClasses = () => {
-    const isHorizontal = side === 'left' || side === 'right';
+    const isHorizontal = side === "left" || side === "right";
     if (isHorizontal) {
       switch (size) {
-        case 'sm':
-          return 'w-full max-w-xs';
-        case 'md':
-          return 'w-full max-w-sm sm:max-w-md';
-        case 'lg':
-          return 'w-full max-w-lg';
-        case 'xl':
-          return 'w-full max-w-2xl';
-        case 'full':
-          return 'w-full max-w-full';
+        case "sm":
+          return "w-full max-w-xs";
+        case "md":
+          return "w-full max-w-sm sm:max-w-md";
+        case "lg":
+          return "w-full max-w-lg";
+        case "xl":
+          return "w-full max-w-2xl";
+        case "full":
+          return "w-full max-w-full";
         default:
           return size; // allows custom Tailwind class e.g. "max-w-md"
       }
     } else {
       switch (size) {
-        case 'sm':
-          return 'max-h-[30vh]';
-        case 'md':
-          return 'max-h-[50vh]';
-        case 'lg':
-          return 'max-h-[75vh]';
-        case 'xl':
-        case 'full':
-          return 'max-h-full h-full';
+        case "sm":
+          return "max-h-[30vh]";
+        case "md":
+          return "max-h-[50vh]";
+        case "lg":
+          return "max-h-[75vh]";
+        case "xl":
+        case "full":
+          return "max-h-full h-full";
         default:
           return size;
       }
@@ -137,26 +137,23 @@ export default function Sheet({
   const { panel, variants } = getPlacementClasses();
   const sizeClasses = getSizeClasses();
 
-  if (typeof document === 'undefined') return null;
+  if (typeof document === "undefined") return null;
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <SheetContext.Provider value={{ onClose, side }}>
-          <div
-            dir={dir}
-            className="fixed inset-0 z-50 select-none font-sans"
-          >
+          <div dir={dir} className="fixed inset-0 z-50 select-none font-sans">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
               onClick={closeOnBackdropClick ? onClose : undefined}
               className={cn(
-                'fixed inset-0 bg-black/65 backdrop-blur-xs transition-opacity',
-                backdropClassName
+                "fixed inset-0 bg-black/65 backdrop-blur-xs transition-opacity",
+                backdropClassName,
               )}
             />
 
@@ -171,10 +168,10 @@ export default function Sheet({
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
               className={cn(
-                'z-10 flex flex-col shadow-2xl overflow-hidden focus:outline-hidden will-change-transform',
+                "z-10 flex flex-col shadow-2xl overflow-hidden focus:outline-hidden will-change-transform",
                 panel,
                 sizeClasses,
-                className
+                className,
               )}
             >
               {showCloseButton && (
@@ -188,7 +185,7 @@ export default function Sheet({
         </SheetContext.Provider>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 }
 
@@ -197,8 +194,8 @@ export function SheetHeader({ className, children, ...props }) {
   return (
     <div
       className={cn(
-        'flex flex-col space-y-1.5 p-4 sm:p-5 border-b border-border/50',
-        className
+        "flex flex-col space-y-1.5 p-4 sm:p-5 border-b border-border/50",
+        className,
       )}
       {...props}
     >
@@ -211,7 +208,10 @@ export function SheetHeader({ className, children, ...props }) {
 export function SheetTitle({ className, children, ...props }) {
   return (
     <h3
-      className={cn('text-base sm:text-lg font-black text-foreground', className)}
+      className={cn(
+        "text-base sm:text-lg font-black text-foreground",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -222,10 +222,7 @@ export function SheetTitle({ className, children, ...props }) {
 // Compound Description Component
 export function SheetDescription({ className, children, ...props }) {
   return (
-    <p
-      className={cn('text-xs text-muted-foreground leading-relaxed', className)}
-      {...props}
-    >
+    <p className={cn("text-xs  leading-relaxed", className)} {...props}>
       {children}
     </p>
   );
@@ -235,7 +232,7 @@ export function SheetDescription({ className, children, ...props }) {
 export function SheetBody({ className, children, ...props }) {
   return (
     <div
-      className={cn('flex-1 overflow-y-auto p-4 sm:p-5 space-y-4', className)}
+      className={cn("flex-1 overflow-y-auto p-4 sm:p-5 space-y-4", className)}
       {...props}
     >
       {children}
@@ -248,8 +245,8 @@ export function SheetFooter({ className, children, ...props }) {
   return (
     <div
       className={cn(
-        'flex items-center justify-end gap-2 p-4 border-t border-border/50 bg-muted/20',
-        className
+        "flex items-center justify-end gap-2 p-4 border-t border-border/50 bg-muted/20",
+        className,
       )}
       {...props}
     >
@@ -272,8 +269,8 @@ export function SheetClose({ className, children, onClick, ...props }) {
       onClick={handleClick}
       aria-label="إغلاق"
       className={cn(
-        'p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer active:scale-95',
-        className
+        "p-1.5 rounded-lg  hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer active:scale-95",
+        className,
       )}
       {...props}
     >

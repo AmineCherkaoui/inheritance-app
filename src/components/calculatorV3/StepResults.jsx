@@ -1,35 +1,51 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Button } from '@heroui/react';
+import { Button } from "@heroui/react";
+import { pdf } from "@react-pdf/renderer";
 import {
-  Scale, ShieldAlert, FileText, Download,
-  FileSpreadsheet, Share2, ChevronLeft,
-  ShieldCheck, Check, Banknote,
-  TrendingDown, ScrollText, PieChart as PieIcon
-} from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { serializeState, generateQRCodeWithLogo, cn, downloadBlob } from '../../utils';
-import { ROUTES } from '../../constants/links';
-import { pdf } from '@react-pdf/renderer';
-import PdfReport from '../PdfReport';
-import { exportExcelReport } from '../ExcelReport';
-import DetailedCalculationDrawerV3 from './DetailedCalculationDrawerV3';
-import StepHeader from './StepHeader';
+  Check,
+  ChevronLeft,
+  Download,
+  FileSpreadsheet,
+  Scale,
+  Share2,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { ROUTES } from "../../constants/links";
+import {
+  cn,
+  downloadBlob,
+  generateQRCodeWithLogo,
+  serializeState,
+} from "../../utils";
+import { exportExcelReport } from "../ExcelReport";
+import PdfReport from "../PdfReport";
+import DetailedCalculationDrawerV3 from "./DetailedCalculationDrawerV3";
+import StepHeader from "./StepHeader";
 
 function formatCurrency(value) {
-  return (value ?? 0).toLocaleString('ar-MA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' د.م.';
+  return (
+    (value ?? 0).toLocaleString("ar-MA", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }) + " د.م."
+  );
 }
 
 function getCommonDenominatorFractions(distributions) {
-  const active = distributions.filter(d => d.percentage > 0);
+  const active = distributions.filter((d) => d.percentage > 0);
   if (active.length === 0) return [];
 
-  const parsed = active.map(d => {
-    const parts = (d.individual_share_fraction || d.share_fraction || '1/1').split('/');
+  const parsed = active.map((d) => {
+    const parts = (
+      d.individual_share_fraction ||
+      d.share_fraction ||
+      "1/1"
+    ).split("/");
     const num = parseInt(parts[0]) || 0;
     const den = parts[1] ? parseInt(parts[1]) : 1;
 
-    const classParts = (d.share_fraction || '1/1').split('/');
+    const classParts = (d.share_fraction || "1/1").split("/");
     const classNum = parseInt(classParts[0]) || 0;
     const classDen = classParts[1] ? parseInt(classParts[1]) : 1;
 
@@ -45,9 +61,9 @@ function getCommonDenominatorFractions(distributions) {
     if (p.classDen > 0) commonDen = lcm(commonDen, p.classDen);
   }
 
-  return parsed.map(p => {
+  return parsed.map((p) => {
     if (p.num === 0) {
-      return { ...p.dist, individual_share_fraction: '0', share_fraction: '0' };
+      return { ...p.dist, individual_share_fraction: "0", share_fraction: "0" };
     }
     const scale = commonDen / p.den;
     const scaledNum = p.num * scale;
@@ -58,35 +74,48 @@ function getCommonDenominatorFractions(distributions) {
     return {
       ...p.dist,
       individual_share_fraction: `${scaledNum}/${commonDen}`,
-      share_fraction: `${classScaledNum}/${commonDen}`
+      share_fraction: `${classScaledNum}/${commonDen}`,
     };
   });
 }
 
-const CHART_COLORS = ['#b5893d', '#4a7c59', '#6366f1', '#d97706', '#8b5cf6', '#0284c7', '#e11d48', '#059669'];
-const ALLOC_COLORS = ['#b5893d', '#8b5cf6', '#ef4444'];
+const CHART_COLORS = [
+  "#b5893d",
+  "#4a7c59",
+  "#6366f1",
+  "#d97706",
+  "#8b5cf6",
+  "#0284c7",
+  "#e11d48",
+  "#059669",
+];
+const ALLOC_COLORS = ["#b5893d", "#8b5cf6", "#ef4444"];
 
 export default function StepResults({
   result,
   onBackToEdit,
   onReset,
-  stateSnapshot = {}
+  stateSnapshot = {},
 }) {
   const [copied, setCopied] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [chartMode, setChartMode] = useState('heirs'); // 'heirs' | 'estate'
+  const [chartMode, setChartMode] = useState("heirs"); // 'heirs' | 'estate'
 
   if (!result) {
     return (
       <div className="w-full text-center py-12 space-y-4">
-        <Scale size={36} className="text-muted-foreground mx-auto" />
-        <p className="text-sm font-bold text-muted-foreground">
-          لا توجد نتائج متوفرة بعد. يرجى إكمال الخطوات السابقة ثم الضغط على حساب التركة.
+        <Scale size={36} className=" mx-auto" />
+        <p className="text-sm font-bold ">
+          لا توجد نتائج متوفرة بعد. يرجى إكمال الخطوات السابقة ثم الضغط على حساب
+          التركة.
         </p>
         {onBackToEdit && (
-          <Button onPress={onBackToEdit} className="bg-primary-950 text-secondary-200 font-bold rounded-xl">
+          <Button
+            onPress={onBackToEdit}
+            className="bg-primary-950 text-secondary-200 font-bold rounded-xl"
+          >
             الرجوع للخطوات
           </Button>
         )}
@@ -94,38 +123,50 @@ export default function StepResults({
     );
   }
 
-  const displayNetEstate = (result.original_net_estate || result.total_estate) - (result.total_wills_cost || 0);
-  const allFormatted = getCommonDenominatorFractions(result.distributions || []);
-  const heirsDistributions = allFormatted.filter(d => !d.relationship.startsWith('WILL_'));
-  const willsDistributions = allFormatted.filter(d => d.relationship.startsWith('WILL_'));
+  const displayNetEstate =
+    (result.original_net_estate || result.total_estate) -
+    (result.total_wills_cost || 0);
+  const allFormatted = getCommonDenominatorFractions(
+    result.distributions || [],
+  );
+  const heirsDistributions = allFormatted.filter(
+    (d) => !d.relationship.startsWith("WILL_"),
+  );
+  const willsDistributions = allFormatted.filter((d) =>
+    d.relationship.startsWith("WILL_"),
+  );
 
   const familyPieData = heirsDistributions.map((dist) => ({
     name: dist.relationship_display,
     value: dist.total_value,
-    percentage: dist.percentage
+    percentage: dist.percentage,
   }));
 
   const estateAllocationData = [
-    { name: 'صافي الورثة', value: displayNetEstate, percentage: (displayNetEstate / result.total_estate) * 100 }
+    {
+      name: "صافي الورثة",
+      value: displayNetEstate,
+      percentage: (displayNetEstate / result.total_estate) * 100,
+    },
   ];
   if (result.total_wills_cost > 0) {
     estateAllocationData.push({
-      name: 'الوصايا المنفذة',
+      name: "الوصايا المنفذة",
       value: result.total_wills_cost,
-      percentage: (result.total_wills_cost / result.total_estate) * 100
+      percentage: (result.total_wills_cost / result.total_estate) * 100,
     });
   }
   if (result.deductions > 0) {
     estateAllocationData.push({
-      name: 'الديون والالتزامات',
+      name: "الديون والالتزامات",
       value: result.deductions,
-      percentage: (result.deductions / result.total_estate) * 100
+      percentage: (result.deductions / result.total_estate) * 100,
     });
   }
 
   const hasWillsOrDebts = result.total_wills_cost > 0 || result.deductions > 0;
-  const isMandatory = result.mandatory_bequest_steps && result.mandatory_bequest_steps.length > 0;
-
+  const isMandatory =
+    result.mandatory_bequest_steps && result.mandatory_bequest_steps.length > 0;
 
   const rawDebts = stateSnapshot.debts || [];
   const activeDebtsList = Array.isArray(rawDebts)
@@ -140,28 +181,31 @@ export default function StepResults({
   const copyShareLink = () => {
     const url = getShareLink();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }).catch(() => fallbackCopy(url));
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => fallbackCopy(url));
     } else {
       fallbackCopy(url);
     }
   };
 
   const fallbackCopy = (url) => {
-    const textArea = document.createElement('textarea');
+    const textArea = document.createElement("textarea");
     textArea.value = url;
-    textArea.style.position = 'fixed';
+    textArea.style.position = "fixed";
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
     try {
-      document.execCommand('copy');
+      document.execCommand("copy");
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Copy failed', err);
+      console.error("Copy failed", err);
     }
     document.body.removeChild(textArea);
   };
@@ -177,12 +221,12 @@ export default function StepResults({
           result={result}
           shareUrl={shareUrl}
           qrCodeDataUrl={qrCodeDataUrl}
-        />
+        />,
       ).toBlob();
-      const fileName = `تقرير_الميراث_${result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}.pdf`;
+      const fileName = `تقرير_الميراث_${result.deceased_name || (result.deceased_gender === "female" ? "المتوفاة" : "المتوفى")}.pdf`;
       downloadBlob(blob, fileName);
     } catch (err) {
-      console.error('PDF download failed', err);
+      console.error("PDF download failed", err);
     } finally {
       setLoadingPdf(false);
     }
@@ -194,7 +238,7 @@ export default function StepResults({
     try {
       await exportExcelReport(result, stateSnapshot);
     } catch (e) {
-      console.error('Failed to export Excel', e);
+      console.error("Failed to export Excel", e);
     } finally {
       setExportingExcel(false);
     }
@@ -218,24 +262,26 @@ export default function StepResults({
       {/* Estate Liquidation Overview (تصفية التركة والخصوم) */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
-
           <div className="flex items-center gap-1.5 text-lg">
-            <span className="font-bold text-muted-foreground">
-              {result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى'}:
+            <span className="font-bold ">
+              {result.deceased_gender === "female" ? "المتوفاة" : "المتوفى"}:
             </span>
             <span className="font-black text-primary-800">
-              {result.deceased_name || (result.deceased_gender === 'female' ? 'المتوفاة' : 'المتوفى')}
+              {result.deceased_name ||
+                (result.deceased_gender === "female" ? "المتوفاة" : "المتوفى")}
             </span>
           </div>
         </div>
 
-        <div className={cn(
-          'grid gap-3',
-          hasWillsOrDebts ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'
-        )}>
+        <div
+          className={cn(
+            "grid gap-3",
+            hasWillsOrDebts ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2",
+          )}
+        >
           {/* Gross Estate */}
           <div className="bg-white/50 border border-primary-950/20 rounded-xl p-3.5 flex flex-col text-right">
-            <span className="text-[11px] font-bold text-muted-foreground">إجمالي التركة</span>
+            <span className="text-[11px] font-bold ">إجمالي التركة</span>
             <span className="text-xs sm:text-sm font-black font-mono text-primary-950 mt-1">
               {formatCurrency(result.total_estate)}
             </span>
@@ -243,33 +289,51 @@ export default function StepResults({
 
           {/* Debts */}
           {hasWillsOrDebts && (
-            <div className={cn(
-              'border rounded-xl p-3.5 flex flex-col text-right',
-              result.deductions > 0 ? 'bg-red-500/5 border-red-500/30' : 'bg-white/50 border-primary-950/20'
-            )}>
-              <span className="text-[11px] font-bold text-red-700">الديون والالتزامات</span>
+            <div
+              className={cn(
+                "border rounded-xl p-3.5 flex flex-col text-right",
+                result.deductions > 0
+                  ? "bg-red-500/5 border-red-500/30"
+                  : "bg-white/50 border-primary-950/20",
+              )}
+            >
+              <span className="text-[11px] font-bold text-red-700">
+                الديون والالتزامات
+              </span>
               <span className="text-xs sm:text-sm font-black font-mono text-red-700 mt-1">
-                {result.deductions > 0 ? `- ${formatCurrency(result.deductions)}` : '0 د.م.'}
+                {result.deductions > 0
+                  ? `- ${formatCurrency(result.deductions)}`
+                  : "0 د.م."}
               </span>
             </div>
           )}
 
           {/* Wills */}
           {hasWillsOrDebts && (
-            <div className={cn(
-              'border rounded-xl p-3.5 flex flex-col text-right',
-              result.total_wills_cost > 0 ? 'bg-purple-500/5 border-purple-500/30' : 'bg-white/50 border-primary-950/20'
-            )}>
-              <span className="text-[11px] font-bold text-purple-700">الوصايا المنفذة</span>
+            <div
+              className={cn(
+                "border rounded-xl p-3.5 flex flex-col text-right",
+                result.total_wills_cost > 0
+                  ? "bg-purple-500/5 border-purple-500/30"
+                  : "bg-white/50 border-primary-950/20",
+              )}
+            >
+              <span className="text-[11px] font-bold text-purple-700">
+                الوصايا المنفذة
+              </span>
               <span className="text-xs sm:text-sm font-black font-mono text-purple-700 mt-1">
-                {result.total_wills_cost > 0 ? `- ${formatCurrency(result.total_wills_cost)}` : '0 د.م.'}
+                {result.total_wills_cost > 0
+                  ? `- ${formatCurrency(result.total_wills_cost)}`
+                  : "0 د.م."}
               </span>
             </div>
           )}
 
           {/* Net Estate */}
           <div className="bg-primary-950 border border-secondary-200/50 rounded-xl p-3.5 flex flex-col text-right">
-            <span className="text-[11px] font-bold text-secondary-200/80">صافي تركة الورثة</span>
+            <span className="text-[11px] font-bold text-secondary-200/80">
+              صافي تركة الورثة
+            </span>
             <span className="text-xs sm:text-sm font-black font-mono text-secondary-200 mt-1">
               {formatCurrency(displayNetEstate)}
             </span>
@@ -282,27 +346,29 @@ export default function StepResults({
         {/* Chart Column - 4 Cols */}
         <div className="lg:col-span-4 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-muted-foreground block text-right">
-              التحليل البياني
-            </span>
+            <span className="text-sm  block text-right">التحليل البياني</span>
             {hasWillsOrDebts && (
               <div className="flex items-center gap-1 bg-white/80 p-0.5 rounded-lg border border-primary-950/10 text-[10px] font-bold">
                 <button
                   type="button"
-                  onClick={() => setChartMode('heirs')}
+                  onClick={() => setChartMode("heirs")}
                   className={cn(
-                    'px-2 py-0.5 rounded-md cursor-pointer transition-colors',
-                    chartMode === 'heirs' ? 'bg-primary-950 text-white' : 'text-primary-950 hover:bg-primary-950/5'
+                    "px-2 py-0.5 rounded-md cursor-pointer transition-colors",
+                    chartMode === "heirs"
+                      ? "bg-primary-950 text-white"
+                      : "text-primary-950 hover:bg-primary-950/5",
                   )}
                 >
                   الورثة
                 </button>
                 <button
                   type="button"
-                  onClick={() => setChartMode('estate')}
+                  onClick={() => setChartMode("estate")}
                   className={cn(
-                    'px-2 py-0.5 rounded-md cursor-pointer transition-colors',
-                    chartMode === 'estate' ? 'bg-primary-950 text-white' : 'text-primary-950 hover:bg-primary-950/5'
+                    "px-2 py-0.5 rounded-md cursor-pointer transition-colors",
+                    chartMode === "estate"
+                      ? "bg-primary-950 text-white"
+                      : "text-primary-950 hover:bg-primary-950/5",
                   )}
                 >
                   التركة
@@ -314,22 +380,39 @@ export default function StepResults({
           <div className="bg-white/50 border border-primary-950/20 rounded-xl p-4 flex flex-col items-center justify-center">
             {/* Donut Chart */}
             <div className="relative h-44 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%" className="relative z-10">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                className="relative z-10"
+              >
                 <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                   <Pie
-                    data={chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData}
+                    data={
+                      chartMode === "estate" && hasWillsOrDebts
+                        ? estateAllocationData
+                        : familyPieData
+                    }
                     cx="50%"
                     cy="50%"
                     innerRadius="50%"
                     outerRadius="75%"
-                    paddingAngle={(chartMode === 'estate' ? estateAllocationData.length : familyPieData.length) > 1 ? 2 : 0}
+                    paddingAngle={
+                      (chartMode === "estate"
+                        ? estateAllocationData.length
+                        : familyPieData.length) > 1
+                        ? 2
+                        : 0
+                    }
                     dataKey="value"
                   >
-                    {(chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData).map((entry, index) => (
+                    {(chartMode === "estate" && hasWillsOrDebts
+                      ? estateAllocationData
+                      : familyPieData
+                    ).map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={
-                          chartMode === 'estate' && hasWillsOrDebts
+                          chartMode === "estate" && hasWillsOrDebts
                             ? ALLOC_COLORS[index % ALLOC_COLORS.length]
                             : CHART_COLORS[index % CHART_COLORS.length]
                         }
@@ -337,15 +420,15 @@ export default function StepResults({
                     ))}
                   </Pie>
                   <Tooltip
-                    wrapperStyle={{ zIndex: 50, outline: 'none' }}
+                    wrapperStyle={{ zIndex: 50, outline: "none" }}
                     formatter={(val) => `${Number(val).toLocaleString()} د.م.`}
                     contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '10px',
-                      fontSize: '11px',
-                      textAlign: 'right',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      backgroundColor: "#ffffff",
+                      borderRadius: "10px",
+                      fontSize: "11px",
+                      textAlign: "right",
+                      border: "1px solid rgba(0,0,0,0.1)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     }}
                   />
                 </PieChart>
@@ -353,18 +436,27 @@ export default function StepResults({
 
               {/* Center Estate Info (Layered below the chart & tooltip, visible through the donut hole) */}
               <div className="absolute inset-0 z-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-[10px] font-bold text-muted-foreground leading-tight">
-                  {chartMode === 'estate' && hasWillsOrDebts ? 'إجمالي التركة' : 'صافي الورثة'}
+                <span className="text-[10px] font-bold  leading-tight">
+                  {chartMode === "estate" && hasWillsOrDebts
+                    ? "إجمالي التركة"
+                    : "صافي الورثة"}
                 </span>
                 <span className="text-xs font-black font-mono text-primary-950 mt-0.5">
-                  {formatCurrency(chartMode === 'estate' && hasWillsOrDebts ? result.total_estate : displayNetEstate)}
+                  {formatCurrency(
+                    chartMode === "estate" && hasWillsOrDebts
+                      ? result.total_estate
+                      : displayNetEstate,
+                  )}
                 </span>
               </div>
             </div>
 
             {/* Percentage Legend */}
             <div className="w-full flex flex-col gap-1 mt-3 pt-3 border-t border-primary-950/10">
-              {(chartMode === 'estate' && hasWillsOrDebts ? estateAllocationData : familyPieData).map((entry, idx) => (
+              {(chartMode === "estate" && hasWillsOrDebts
+                ? estateAllocationData
+                : familyPieData
+              ).map((entry, idx) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between text-xs py-0.5 text-primary-950"
@@ -374,12 +466,14 @@ export default function StepResults({
                       className="size-2 rounded-full shrink-0"
                       style={{
                         backgroundColor:
-                          chartMode === 'estate' && hasWillsOrDebts
+                          chartMode === "estate" && hasWillsOrDebts
                             ? ALLOC_COLORS[idx % ALLOC_COLORS.length]
-                            : CHART_COLORS[idx % CHART_COLORS.length]
+                            : CHART_COLORS[idx % CHART_COLORS.length],
                       }}
                     />
-                    <span className="truncate font-bold text-[11px]">{entry.name}</span>
+                    <span className="truncate font-bold text-[11px]">
+                      {entry.name}
+                    </span>
                   </div>
                   <span className="font-mono font-bold text-[11px] shrink-0">
                     %{entry.percentage.toFixed(2)}
@@ -392,7 +486,7 @@ export default function StepResults({
 
         {/* Heirs Table - 8 Cols */}
         <div className="lg:col-span-8 flex flex-col gap-2">
-          <span className="text-sm font-bold text-muted-foreground block text-right">
+          <span className="text-sm block text-right">
             أنصبة الورثة المستحقين
           </span>
 
@@ -410,22 +504,29 @@ export default function StepResults({
               </thead>
               <tbody className="divide-y divide-primary-950/10">
                 {heirsDistributions.map((dist, idx) => {
-                  const indPercentage = dist.individual_percentage ?? dist.percentage;
+                  const indPercentage =
+                    dist.individual_percentage ?? dist.percentage;
                   return (
-                    <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                    <tr
+                      key={idx}
+                      className="hover:bg-primary-950/5 transition-colors"
+                    >
                       {/* Heir Name */}
                       <td className="py-3 px-3 font-bold text-primary-950">
                         <div className="flex items-center gap-2">
                           <span
                             className="size-2 rounded-full shrink-0"
-                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                            style={{
+                              backgroundColor:
+                                CHART_COLORS[idx % CHART_COLORS.length],
+                            }}
                           />
                           <span>{dist.relationship_display}</span>
                         </div>
                       </td>
 
                       {/* Count */}
-                      <td className="py-3 px-2 text-center font-mono font-bold text-muted-foreground">
+                      <td className="py-3 px-2 text-center font-mono font-bold ">
                         {dist.count}
                       </td>
 
@@ -460,8 +561,7 @@ export default function StepResults({
       {/* Wills Section if any */}
       {willsDistributions.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-bold text-muted-foreground block text-right">
-            الوصايا           </span>
+          <span className="text-sm font-bold  block text-right">الوصايا </span>
 
           <div className="overflow-x-auto bg-white/50 border border-primary-950/20 rounded-xl">
             <table className="w-full border-collapse text-right text-xs">
@@ -474,13 +574,17 @@ export default function StepResults({
               </thead>
               <tbody className="divide-y divide-primary-950/10">
                 {willsDistributions.map((dist, idx) => (
-                  <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                  <tr
+                    key={idx}
+                    className="hover:bg-primary-950/5 transition-colors"
+                  >
                     <td className="py-2.5 px-3 font-bold text-primary-950">
                       {dist.relationship_display}
                     </td>
 
                     <td className="py-2.5 px-3 text-center font-mono font-black text-primary-950">
-                      %{dist.percentage.toFixed(2)} {dist.share_fraction && `(${dist.share_fraction})`}
+                      %{dist.percentage.toFixed(2)}{" "}
+                      {dist.share_fraction && `(${dist.share_fraction})`}
                     </td>
                     <td className="py-2.5 px-3 text-left font-mono font-extrabold text-primary-950">
                       {formatCurrency(dist.total_value)}
@@ -496,7 +600,7 @@ export default function StepResults({
       {/* Debts Section if any */}
       {activeDebtsList.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-bold text-muted-foreground block text-right">
+          <span className="text-sm font-bold  block text-right">
             تفاصيل الديون والالتزامات المالية المقتطعة
           </span>
 
@@ -511,18 +615,21 @@ export default function StepResults({
               </thead>
               <tbody className="divide-y divide-primary-950/10">
                 {activeDebtsList.map((debt, idx) => (
-                  <tr key={idx} className="hover:bg-primary-950/5 transition-colors">
+                  <tr
+                    key={idx}
+                    className="hover:bg-primary-950/5 transition-colors"
+                  >
                     <td className="py-2.5 px-3 font-bold text-primary-950">
                       {debt.description || `دين رقم ${idx + 1}`}
                     </td>
-                    <td className="py-2.5 px-3 text-center font-bold text-muted-foreground">
-                      {debt.type === 'funeral'
-                        ? 'مؤن التجهيز'
-                        : debt.type === 'mortgage'
-                          ? 'دين عيني برهن'
-                          : debt.type === 'allah'
-                            ? 'حق لله تعالى'
-                            : 'دين عادي'}
+                    <td className="py-2.5 px-3 text-center font-bold ">
+                      {debt.type === "funeral"
+                        ? "مؤن التجهيز"
+                        : debt.type === "mortgage"
+                          ? "دين عيني برهن"
+                          : debt.type === "allah"
+                            ? "حق لله تعالى"
+                            : "دين عادي"}
                     </td>
                     <td className="py-2.5 px-3 text-left font-mono font-extrabold text-red-700">
                       {formatCurrency(Number(debt.amount))}
@@ -541,7 +648,7 @@ export default function StepResults({
           <span className="text-xs sm:text-sm font-extrabold text-primary-950">
             خطوات الحل والشرح التفصيلي للمسألة
           </span>
-          <span className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+          <span className="text-[11px] sm:text-xs  mt-0.5">
             عرض الأدلة الفقهية، قواعد الحجب، تأصيل الفروض، وتصحيح الأنصبة
           </span>
         </div>
@@ -568,7 +675,7 @@ export default function StepResults({
           <span className="text-xs sm:text-sm font-extrabold text-primary-950">
             مشاركة وتصدير
           </span>
-          <span className="text-[11px] text-muted-foreground mt-0.5">
+          <span className="text-[11px]  mt-0.5">
             احفظ المسألة أو شارك التقرير الشرعي مع العائلة
           </span>
         </div>
@@ -600,7 +707,7 @@ export default function StepResults({
             className="bg-secondary-400 hover:bg-secondary-500 text-white px-3.5  rounded-full font-bold text-xs flex items-center gap-1.5 cursor-pointer"
           >
             <Download size={14} />
-            <span>{loadingPdf ? 'جاري التحميل...' : 'تحميل تقرير PDF'}</span>
+            <span>{loadingPdf ? "جاري التحميل..." : "تحميل تقرير PDF"}</span>
           </Button>
 
           {/* Excel Export Button */}
@@ -610,12 +717,10 @@ export default function StepResults({
             className="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5  rounded-full  font-bold text-xs flex items-center gap-1.5 cursor-pointer"
           >
             <FileSpreadsheet size={14} />
-            <span>{exportingExcel ? 'جاري التصدير...' : 'تصدير EXCEL'}</span>
+            <span>{exportingExcel ? "جاري التصدير..." : "تصدير EXCEL"}</span>
           </Button>
         </div>
       </div>
-
-
     </motion.div>
   );
 }

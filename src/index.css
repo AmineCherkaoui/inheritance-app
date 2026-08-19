@@ -1,38 +1,38 @@
 @font-face {
-  font-family: 'DINNextLTArabic';
-  src: url('/fonts/DINNEXTLTARABIC-LIGHT-2-2.ttf') format('truetype');
+  font-family: "DINNextLTArabic";
+  src: url("/fonts/DINNEXTLTARABIC-LIGHT.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DINNextLTArabic';
-  src: url('/fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+  font-family: "DINNextLTArabic";
+  src: url("/fonts/DINNextLTArabic-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DINNextLTArabic';
-  src: url('/fonts/DINNextLTArabic-Medium-4.ttf') format('truetype');
+  font-family: "DINNextLTArabic";
+  src: url("/fonts/DINNextLTArabic-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DINNextLTArabic';
-  src: url('/fonts/DINNextLTArabic-Bold-4.ttf') format('truetype');
+  font-family: "DINNextLTArabic";
+  src: url("/fonts/DINNextLTArabic-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Aalmaghribi';
-  src: url('/fonts/Aalmaghribi.otf') format('opentype');
+  font-family: "Aalmaghribi";
+  src: url("/fonts/Aalmaghribi.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
 }
@@ -66,15 +66,21 @@
 }
 
 .font-quran {
-  font-family: 'Aalmaghribi', serif !important;
+  font-family: "Aalmaghribi", serif !important;
   font-size: 1.3em;
   line-height: 1.6;
   color: rgb(184, 115, 51);
   letter-spacing: normal !important;
   word-spacing: 0.15em !important;
   text-rendering: optimizeLegibility !important;
-  font-variant-ligatures: common-ligatures contextual discretionary-ligatures historical-ligatures !important;
-  font-feature-settings: "liga" on, "calt" on, "ccmp" on, "locl" on, "mset" on !important;
+  font-variant-ligatures: common-ligatures contextual discretionary-ligatures
+    historical-ligatures !important;
+  font-feature-settings:
+    "liga" on,
+    "calt" on,
+    "ccmp" on,
+    "locl" on,
+    "mset" on !important;
 }
 
 @import "tailwindcss";
@@ -101,9 +107,8 @@
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --radius-lg: var(--radius);
-  --font-sans: 'DINNextLTArabic', 'Outfit', 'Inter', sans-serif;
+  --font-sans: "DINNextLTArabic", "Outfit", "Inter", sans-serif;
 }
-
 
 *,
 body,
@@ -111,7 +116,7 @@ input,
 select,
 textarea,
 button {
-  font-family: 'DINNextLTArabic', 'Outfit', 'Inter', sans-serif !important;
+  font-family: "DINNextLTArabic", sans-serif !important;
 }
 
 body {
