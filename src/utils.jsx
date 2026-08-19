@@ -281,5 +281,48 @@ export const downloadBlob = (blob, filename) => {
   }, 1500);
 };
 
+let cachedLogoDataUrl = null;
 
+export const getSvgAsPngDataUrl = async (svgUrl = '/images/logo.svg', width = 600, height = 600) => {
+  if (cachedLogoDataUrl && svgUrl === '/images/logo.svg') {
+    return cachedLogoDataUrl;
+  }
+  if (typeof document === 'undefined') return '';
+  return new Promise((resolve) => {
+    try {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
 
+      const onDone = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png');
+          if (svgUrl === '/images/logo.svg') {
+            cachedLogoDataUrl = dataUrl;
+          }
+          resolve(dataUrl);
+        } catch (e) {
+          console.error('Failed to convert SVG to PNG canvas:', e);
+          resolve('');
+        }
+      };
+
+      img.onload = onDone;
+      img.onerror = (e) => {
+        console.error('Failed to load SVG for conversion:', e);
+        resolve('');
+      };
+      img.src = svgUrl;
+      if (img.complete && img.naturalWidth > 0) {
+        onDone();
+      }
+    } catch (err) {
+      console.error('Error in getSvgAsPngDataUrl:', err);
+      resolve('');
+    }
+  });
+};

@@ -16,6 +16,7 @@ import {
   cn,
   downloadBlob,
   generateQRCodeWithLogo,
+  getSvgAsPngDataUrl,
   serializeState,
 } from "../../utils";
 import { exportExcelReport } from "../ExcelReport";
@@ -215,12 +216,16 @@ export default function StepResults({
     setLoadingPdf(true);
     try {
       const shareUrl = getShareLink();
-      const qrCodeDataUrl = await generateQRCodeWithLogo(shareUrl);
+      const [qrCodeDataUrl, logoDataUrl] = await Promise.all([
+        generateQRCodeWithLogo(shareUrl),
+        getSvgAsPngDataUrl("/images/logo.svg", 600, 600),
+      ]);
       const blob = await pdf(
         <PdfReport
           result={result}
           shareUrl={shareUrl}
           qrCodeDataUrl={qrCodeDataUrl}
+          logoDataUrl={logoDataUrl}
         />,
       ).toBlob();
       const fileName = `تقرير_الميراث_${result.deceased_name || (result.deceased_gender === "female" ? "المتوفاة" : "المتوفى")}.pdf`;
@@ -675,7 +680,7 @@ export default function StepResults({
           <span className="text-xs sm:text-sm font-extrabold text-primary-950">
             مشاركة وتصدير
           </span>
-          <span className="text-[11px]  mt-0.5">
+          <span className="text-[11px] sm:text-xs  mt-0.5">
             احفظ المسألة أو شارك التقرير الشرعي مع العائلة
           </span>
         </div>
