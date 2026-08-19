@@ -1,14 +1,12 @@
-import React from "react";
-import { ScrollText, X, Sparkles, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ScrollText, X } from "lucide-react";
+import { cn, renderExplanationWithQuranFont } from "../../utils";
+import AppBackground from "../AppBackground";
 import Sheet, {
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
   SheetBody,
   SheetClose,
+  SheetHeader,
+  SheetTitle,
 } from "../ui/Sheet";
-import AppBackground from "../AppBackground";
-import { renderExplanationWithQuranFont, cn } from "../../utils";
 
 function formatCurrency(value) {
   return (
@@ -135,10 +133,6 @@ export default function DetailedCalculationDrawerV3({
         {/* Case Summary Card */}
         {heirsSummary && (
           <div className="bg-primary-950 text-secondary-200 border border-secondary-200/30 p-4 rounded-xl text-xs sm:text-sm font-bold leading-relaxed text-right flex items-start gap-3 shadow-2xs">
-            <Sparkles
-              size={18}
-              className="text-secondary-200 shrink-0 mt-0.5"
-            />
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-secondary-200/70 font-semibold">
                 بيان ورثة المتوفى:
