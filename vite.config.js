@@ -22,6 +22,7 @@ export default defineConfig({
         "fonts/**/*",
       ],
       manifest: {
+        id: "/",
         name: "حساب الفرائض والمواريث",
         short_name: "المواريث",
         description:
@@ -60,6 +61,22 @@ export default defineConfig({
             purpose: "maskable",
           },
         ],
+        screenshots: [
+          {
+            src: "/images/bg-home.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide",
+            label: "واجهة تطبيق حساب الفرائض والمواريث",
+          },
+          {
+            src: "/images/bg-home.png",
+            sizes: "720x1280",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "واجهة تطبيق حساب الفرائض والمواريث على الهاتف",
+          },
+        ],
       },
       workbox: {
         globPatterns: [
@@ -92,7 +109,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
     }),
   ],
