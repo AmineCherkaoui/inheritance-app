@@ -27,8 +27,8 @@ export default defineConfig({
         short_name: "المواريث",
         description:
           "تطبيق حساب الفرائض والمواريث الشرعية وتوزيع التركات بدقة وسهولة",
-        background_color: "#881717",
-        theme_color: "#881717",
+        background_color: "#3B0703",
+        theme_color: "#3B0703",
         display: "standalone",
         orientation: "any",
         dir: "rtl",
