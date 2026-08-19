@@ -1,33 +1,41 @@
 @font-face {
-  font-family: "DINNextLTArabic";
-  src: url("/fonts/DINNEXTLTARABIC-LIGHT.ttf") format("truetype");
+  font-family: "Main";
+  src: url("/fonts/Main-LIGHT.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  /* ascent-override: 100%;
+  descent-override: 40%; */
 }
 
 @font-face {
-  font-family: "DINNextLTArabic";
-  src: url("/fonts/DINNextLTArabic-Regular.ttf") format("truetype");
+  font-family: "Main";
+  src: url("/fonts/Main-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  /* ascent-override: 100%;
+  descent-override: 40%; */
 }
 
 @font-face {
-  font-family: "DINNextLTArabic";
-  src: url("/fonts/DINNextLTArabic-Medium.ttf") format("truetype");
+  font-family: "Main";
+  src: url("/fonts/Main-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  /* ascent-override: 100%;
+  descent-override: 40%; */
 }
 
 @font-face {
-  font-family: "DINNextLTArabic";
-  src: url("/fonts/DINNextLTArabic-Bold.ttf") format("truetype");
+  font-family: "Main";
+  src: url("/fonts/Main-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  /* ascent-override: 100%;
+  descent-override: 40%; */
 }
 
 @font-face {
