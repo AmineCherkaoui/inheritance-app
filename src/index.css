@@ -115,7 +115,7 @@
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --radius-lg: var(--radius);
-  --font-sans: "DINNextLTArabic", "Outfit", "Inter", sans-serif;
+  --font-sans: "Main", sans-serif;
 }
 
 *,
@@ -124,7 +124,7 @@ input,
 select,
 textarea,
 button {
-  font-family: "DINNextLTArabic", sans-serif !important;
+  font-family: "Main", sans-serif !important;
 }
 
 body {
